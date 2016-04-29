@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.logging.Level;
 
 import org.anjocaido.groupmanager.GroupManager;
 import org.anjocaido.groupmanager.data.User;
@@ -54,8 +55,8 @@ import org.bukkit.plugin.PluginManager;
  */
 public class BukkitPermissions {
 
-	protected WeakHashMap<String, PermissionAttachment> attachments = new WeakHashMap<String, PermissionAttachment>();
-	protected LinkedHashMap<String, Permission> registeredPermissions = new LinkedHashMap<String, Permission>();
+	protected WeakHashMap<String, PermissionAttachment> attachments = new WeakHashMap<>();
+	protected LinkedHashMap<String, Permission> registeredPermissions = new LinkedHashMap<>();
 	protected GroupManager plugin;
 	protected boolean dumpAllPermissions = true;
 	protected boolean dumpMatchedPermissions = true;
@@ -84,9 +85,7 @@ public class BukkitPermissions {
 		try {
 			permissions = PermissionAttachment.class.getDeclaredField("permissions");
 			permissions.setAccessible(true);
-		} catch (SecurityException e) {
-			e.printStackTrace();
-		} catch (NoSuchFieldException e) {
+		} catch (SecurityException | NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
@@ -123,9 +122,9 @@ public class BukkitPermissions {
 
 		registeredPermissions.clear();
 
-		for (Permission perm : Bukkit.getPluginManager().getPermissions()) {
-			registeredPermissions.put(perm.getName().toLowerCase(), perm);
-		}
+                Bukkit.getPluginManager().getPermissions().stream().forEach((perm) -> {
+                    registeredPermissions.put(perm.getName().toLowerCase(), perm);
+            });
 
 	}
 
@@ -170,8 +169,8 @@ public class BukkitPermissions {
 
 		// Add all permissions for this player (GM only)
 		// child nodes will be calculated by Bukkit.
-		List<String> playerPermArray = new ArrayList<String>(plugin.getWorldsHolder().getWorldData(world).getPermissionsHandler().getAllPlayersPermissions(name, false));
-		LinkedHashMap<String, Boolean> newPerms = new LinkedHashMap<String, Boolean>();
+		List<String> playerPermArray = new ArrayList<>(plugin.getWorldsHolder().getWorldData(world).getPermissionsHandler().getAllPlayersPermissions(name, false));
+		LinkedHashMap<String, Boolean> newPerms = new LinkedHashMap<>();
 
 		// Sort the perm list by parent/child, so it will push to superperms
 		// correctly.
@@ -213,13 +212,11 @@ public class BukkitPermissions {
 				attachment.getPermissible().recalculatePermissions();
 
 			}
-		} catch (IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
+		} catch (IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
 		}
 
-		GroupManager.logger.finest("Attachment updated for: " + name);
+		GroupManager.logger.log(Level.FINEST, "Attachment updated for: {0}", name);
 	}
 
 	/**
@@ -230,7 +227,7 @@ public class BukkitPermissions {
 	 */
 	private List<String> sort(List<String> permList) {
 
-		List<String> result = new ArrayList<String>();
+		List<String> result = new ArrayList<>();
 
 		for (String key : permList) {
 			/*
@@ -238,13 +235,13 @@ public class BukkitPermissions {
 			 */
 			if (!key.isEmpty()) {
 				String a = key.charAt(0) == '-' ? key.substring(1) : key;
-				Map<String, Boolean> allchildren = GroupManager.BukkitPermissions.getAllChildren(a, new HashSet<String>());
+				Map<String, Boolean> allchildren = GroupManager.BukkitPermissions.getAllChildren(a, new HashSet<>());
 				if (allchildren != null) {
 	
 					ListIterator<String> itr = result.listIterator();
 	
 					while (itr.hasNext()) {
-						String node = (String) itr.next();
+						String node = itr.next();
 						String b = node.charAt(0) == '-' ? node.substring(1) : node;
 	
 						// Insert the parent node before the child
@@ -272,23 +269,16 @@ public class BukkitPermissions {
 	 */
 	public List<String> getAllRegisteredPermissions(boolean includeChildren) {
 
-		List<String> perms = new ArrayList<String>();
+		List<String> perms = new ArrayList<>();
 
-		for (String key : registeredPermissions.keySet()) {
-			if (!perms.contains(key)) {
-				perms.add(key);
-
-				if (includeChildren) {
-					Map<String, Boolean> children = getAllChildren(key, new HashSet<String>());
-					if (children != null) {
-						for (String node : children.keySet())
-							if (!perms.contains(node))
-								perms.add(node);
-					}
-				}
-			}
-
-		}
+                registeredPermissions.keySet().stream().filter((key) -> (!perms.contains(key))).map((key) -> {
+                    perms.add(key);
+                return key;
+            }).filter((key) -> (includeChildren)).map((key) -> getAllChildren(key, new HashSet<>())).filter((children) -> (children != null)).forEach((children) -> {
+                children.keySet().stream().filter((node) -> (!perms.contains(node))).forEach((node) -> {
+                    perms.add(node);
+                });
+            });
 		return perms;
 	}
 
@@ -303,8 +293,8 @@ public class BukkitPermissions {
 	 */
 	public Map<String, Boolean> getAllChildren(String node, Set<String> playerPermArray) {
 
-		LinkedList<String> stack = new LinkedList<String>();
-		Map<String, Boolean> alreadyVisited = new HashMap<String, Boolean>();
+		LinkedList<String> stack = new LinkedList<>();
+		Map<String, Boolean> alreadyVisited = new HashMap<>();
 		stack.push(node);
 		alreadyVisited.put(node, true);
 
@@ -314,12 +304,12 @@ public class BukkitPermissions {
 			Map<String, Boolean> children = getChildren(now);
 
 			if ((children != null) && (!playerPermArray.contains("-" + now))) {
-				for (String childName : children.keySet()) {
-					if (!alreadyVisited.containsKey(childName)) {
-						stack.push(childName);
-						alreadyVisited.put(childName, children.get(childName));
-					}
-				}
+                            children.keySet().stream().filter((childName) -> (!alreadyVisited.containsKey(childName))).map((childName) -> {
+                                stack.push(childName);
+                                return childName;
+                            }).forEach((childName) -> {
+                                alreadyVisited.put(childName, children.get(childName));
+                            });
 			}
 		}
 		alreadyVisited.remove(node);
@@ -355,7 +345,7 @@ public class BukkitPermissions {
 	 */
 	public List<String> listPerms(Player player) {
 
-		List<String> perms = new ArrayList<String>();
+		List<String> perms = new ArrayList<>();
 
 		/*
 		 * // All permissions registered with Bukkit for this player
@@ -368,10 +358,9 @@ public class BukkitPermissions {
 		 */
 
 		perms.add("Effective Permissions:");
-		for (PermissionAttachmentInfo info : player.getEffectivePermissions()) {
-			if (info.getValue() == true)
-				perms.add(" " + info.getPermission() + " = " + info.getValue());
-		}
+                player.getEffectivePermissions().stream().filter((info) -> (info.getValue() == true)).forEach((info) -> {
+                    perms.add(" " + info.getPermission() + " = " + info.getValue());
+            });
 		return perms;
 	}
 
@@ -380,13 +369,14 @@ public class BukkitPermissions {
 	 */
 	public void updateAllPlayers() {
 
-		for (Player player : Bukkit.getServer().getOnlinePlayers()) {
-			updatePermissions(player);
-		}
+            Bukkit.getServer().getOnlinePlayers().stream().forEach((player) -> {
+                updatePermissions(player);
+            });
 	}
 
 	/**
 	 * force Bukkit to update this Players permissions.
+     * @param player
 	 */
 	public void updatePlayer(Player player) {
 
@@ -412,12 +402,12 @@ public class BukkitPermissions {
 	 */
 	public void removeAllAttachments() {
 
-		/*
-		 * Remove all attachments.
-		 */
-		for (String key : attachments.keySet()) {
-			attachments.get(key).remove();
-		}
+            /*
+             * Remove all attachments.
+             */
+            attachments.keySet().stream().forEach((key) -> {
+                attachments.get(key).remove();
+            });
 		attachments.clear();
 	}
 
@@ -437,7 +427,7 @@ public class BukkitPermissions {
 			setPlayer_join(true);
 			Player player = event.getPlayer();
 			
-			GroupManager.logger.finest("Player Join event: " + player.getName());
+			GroupManager.logger.log(Level.FINEST, "Player Join event: {0}", player.getName());
 
 			/*
 			 * Tidy up any lose ends

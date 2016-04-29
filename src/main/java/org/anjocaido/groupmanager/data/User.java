@@ -36,6 +36,7 @@ public class User extends DataUnit implements Cloneable {
 
 	/**
 	 * 
+         * @param source
 	 * @param name
 	 */
 	public User(WorldDataHolder source, String name) {
@@ -57,9 +58,9 @@ public class User extends DataUnit implements Cloneable {
 		// Clone all subgroups.
 		clone.subGroups.addAll(this.subGroupListStringCopy());
 		
-		for (String perm : this.getPermissionList()) {
-			clone.addPermission(perm);
-		}
+                this.getPermissionList().stream().forEach((perm) -> {
+                    clone.addPermission(perm);
+            });
 		// clone.variables = this.variables.clone();
 		// clone.flagAsChanged();
 		return clone;
@@ -88,9 +89,9 @@ public class User extends DataUnit implements Cloneable {
 		// Clone all subgroups.
 		clone.subGroups.addAll(this.subGroupListStringCopy());
 				
-		for (String perm : this.getPermissionList()) {
-			clone.addPermission(perm);
-		}
+                this.getPermissionList().stream().forEach((perm) -> {
+                    clone.addPermission(perm);
+            });
 		
 		clone.variables = this.variables.clone(this);
 		clone.flagAsChanged();
@@ -109,9 +110,9 @@ public class User extends DataUnit implements Cloneable {
 		// Clone all subgroups.
 		clone.subGroups.addAll(this.subGroupListStringCopy());
 		
-		for (String perm : this.getPermissionList()) {
-			clone.addPermission(perm);
-		}
+                this.getPermissionList().stream().forEach((perm) -> {
+                    clone.addPermission(perm);
+            });
 		
 		clone.variables = this.variables.clone(this);
 		clone.flagAsChanged();
@@ -259,7 +260,7 @@ public class User extends DataUnit implements Cloneable {
 
 	public ArrayList<Group> subGroupListCopy() {
 
-		ArrayList<Group> val = new ArrayList<Group>();
+		ArrayList<Group> val = new ArrayList<>();
 		synchronized(subGroups) {
 		for (String gstr : subGroups) {
 			Group g = getDataSource().getGroup(gstr);
@@ -275,7 +276,7 @@ public class User extends DataUnit implements Cloneable {
 
 	public ArrayList<String> subGroupListStringCopy() {
 		synchronized(subGroups) {
-			return new ArrayList<String>(subGroups);
+			return new ArrayList<>(subGroups);
 		}
 	}
 
@@ -295,9 +296,9 @@ public class User extends DataUnit implements Cloneable {
 
 		//UserVariables temp = new UserVariables(this, varList);
 		variables.clearVars();
-		for (String key : varList.keySet()) {
-			variables.addVar(key, varList.get(key));
-		}
+                varList.keySet().stream().forEach((key) -> {
+                    variables.addVar(key, varList.get(key));
+            });
 		flagAsChanged();
 		if (GroupManager.isLoaded()) {
 			//if (!GroupManager.BukkitPermissions.isPlayer_join())

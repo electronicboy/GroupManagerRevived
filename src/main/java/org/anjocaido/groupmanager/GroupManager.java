@@ -53,8 +53,8 @@ public class GroupManager extends JavaPlugin {
 	private File backupFolder;
 	private Runnable commiter;
 	private ScheduledThreadPoolExecutor scheduler;
-	private Map<String, ArrayList<User>> overloadedUsers = new HashMap<String, ArrayList<User>>();
-	private Map<String, String> selectedWorlds = new HashMap<String, String>();
+	private Map<String, ArrayList<User>> overloadedUsers = new HashMap<>();
+	private Map<String, String> selectedWorlds = new HashMap<>();
 	private WorldsHolder worldsHolder;
 	private boolean validateOnlinePlayer = true;
 	
@@ -326,19 +326,14 @@ public class GroupManager extends JavaPlugin {
 
 		if (worldsHolder != null) {
 			disableScheduler();
-			commiter = new Runnable() {
-
-				@Override
-				public void run() {
-
-					try {
-						if (worldsHolder.saveChanges(false))
-							GroupManager.logger.log(Level.INFO, " Data files refreshed.");
-					} catch (IllegalStateException ex) {
-						GroupManager.logger.log(Level.WARNING, ex.getMessage());
-					}
-				}
-			};
+			commiter = () -> {
+                            try {
+                                if (worldsHolder.saveChanges(false))
+                                    GroupManager.logger.log(Level.INFO, " Data files refreshed.");
+                            } catch (IllegalStateException ex) {
+                                GroupManager.logger.log(Level.WARNING, ex.getMessage());
+                            }
+                        };
 			scheduler = new ScheduledThreadPoolExecutor(1);
 			long minutes = (long) getGMConfig().getSaveInterval();
 			if (minutes > 0) {
@@ -375,7 +370,9 @@ public class GroupManager extends JavaPlugin {
 	 * 
 	 * @param sender
 	 * @param cmd
+         * @param commandLabel
 	 * @param args
+         * @return 
 	 */
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) {
@@ -1654,7 +1651,7 @@ public class GroupManager extends JavaPlugin {
 				}
 				// Seems OK
 				if (overloadedUsers.get(dataHolder.getName().toLowerCase()) == null) {
-					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<User>());
+					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<>());
 				}
 				dataHolder.overloadUser(auxUser.getLastName());
 				overloadedUsers.get(dataHolder.getName().toLowerCase()).add(dataHolder.getUser(auxUser.getLastName()));
@@ -1688,7 +1685,7 @@ public class GroupManager extends JavaPlugin {
 				}
 				// Seems OK
 				if (overloadedUsers.get(dataHolder.getName().toLowerCase()) == null) {
-					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<User>());
+                            ArrayList<User> put = overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<>());
 				}
 				dataHolder.removeOverload(auxUser.getLastName());
 				if (overloadedUsers.get(dataHolder.getName().toLowerCase()).contains(auxUser)) {
@@ -1706,7 +1703,7 @@ public class GroupManager extends JavaPlugin {
 				}
 				// WORKING
 				auxString = "";
-				removeList = new ArrayList<User>();
+				removeList = new ArrayList<>();
 				count = 0;
 				for (User u : overloadedUsers.get(dataHolder.getName().toLowerCase())) {
 					if (!dataHolder.isOverloaded(u.getLastName())) {
@@ -1722,7 +1719,7 @@ public class GroupManager extends JavaPlugin {
 				}
 				auxString = auxString.substring(0, auxString.lastIndexOf(","));
 				if (overloadedUsers.get(dataHolder.getName().toLowerCase()) == null) {
-					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<User>());
+					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<>());
 				}
 				overloadedUsers.get(dataHolder.getName().toLowerCase()).removeAll(removeList);
 				sender.sendMessage(ChatColor.YELLOW + " " + count + " Users in overload mode: " + ChatColor.WHITE + auxString);
@@ -1736,20 +1733,18 @@ public class GroupManager extends JavaPlugin {
 						return true;
 				}
 				// WORKING
-				removeList = new ArrayList<User>();
+				removeList = new ArrayList<>();
 				count = 0;
-				for (User u : overloadedUsers.get(dataHolder.getName().toLowerCase())) {
-					if (dataHolder.isOverloaded(u.getLastName())) {
-						dataHolder.removeOverload(u.getLastName());
-						count++;
-					}
-				}
+                                count = overloadedUsers.get(dataHolder.getName().toLowerCase()).stream().filter((u) -> (dataHolder.isOverloaded(u.getLastName()))).map((u) -> {
+                                    dataHolder.removeOverload(u.getLastName());
+                            return u;
+                        }).map((_item) -> 1).reduce(count, Integer::sum);
 				if (count == 0) {
 					sender.sendMessage(ChatColor.YELLOW + "There are no users in overload mode.");
 					return true;
 				}
 				if (overloadedUsers.get(dataHolder.getName().toLowerCase()) == null) {
-					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<User>());
+					overloadedUsers.put(dataHolder.getName().toLowerCase(), new ArrayList<>());
 				}
 				overloadedUsers.get(dataHolder.getName().toLowerCase()).clear();
 				sender.sendMessage(ChatColor.YELLOW + " " + count + "All users in overload mode are now normal again.");
@@ -1834,9 +1829,7 @@ public class GroupManager extends JavaPlugin {
 				// WORKING
 				auxString = "";
 				String auxString2 = "";
-				for (Group g : dataHolder.getGroupList()) {
-					auxString += g.getName() + ", ";
-				}
+                                auxString = dataHolder.getGroupList().stream().map((g) -> g.getName() + ", ").reduce(auxString, String::concat);
 				for (Group g : getGlobalGroups().getGroupList()) {
 					auxString2 += g.getName() + ", ";
 				}
@@ -2170,13 +2163,13 @@ public class GroupManager extends JavaPlugin {
 
 		Player player = Bukkit.getServer().getPlayerExact(name);
 
-		for (Player test : Bukkit.getServer().getOnlinePlayers()) {
-			if (!test.equals(player)) {
-				if (test.hasPermission("groupmanager.notify.other"))
-					test.sendMessage(ChatColor.YELLOW + name + " was" + msg);
-			} else if ((player != null) && ((player.hasPermission("groupmanager.notify.self")) || (player.hasPermission("groupmanager.notify.other"))))
-				player.sendMessage(ChatColor.YELLOW + "You were" + msg);
-		}
+                Bukkit.getServer().getOnlinePlayers().stream().forEach((test) -> {
+                    if (!test.equals(player)) {
+                        if (test.hasPermission("groupmanager.notify.other"))
+                            test.sendMessage(ChatColor.YELLOW + name + " was" + msg);
+                    } else if ((player != null) && ((player.hasPermission("groupmanager.notify.self")) || (player.hasPermission("groupmanager.notify.other"))))
+                        player.sendMessage(ChatColor.YELLOW + "You were" + msg);
+            });
 
 	}
 
@@ -2189,8 +2182,8 @@ public class GroupManager extends JavaPlugin {
 	 */
 	private List<String> validatePlayer(String playerName, CommandSender sender) {
 
-		List<Player> players = new ArrayList<Player>();
-		List<String> match = new ArrayList<String>();
+		List<Player> players = new ArrayList<>();
+		List<String> match = new ArrayList<>();
 
 		players = this.getServer().matchPlayer(playerName);
 		if (players.isEmpty()) {

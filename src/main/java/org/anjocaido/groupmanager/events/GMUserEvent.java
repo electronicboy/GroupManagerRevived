@@ -74,14 +74,9 @@ public class GMUserEvent extends Event {
 	public void schedule(final GMUserEvent event) {
 
 		synchronized (GroupManager.getGMEventHandler().getServer()) {
-			if (GroupManager.getGMEventHandler().getServer().getScheduler().scheduleSyncDelayedTask(GroupManager.getGMEventHandler().getPlugin(), new Runnable() {
-	
-				@Override
-				public void run() {
-	
-					GroupManager.getGMEventHandler().getServer().getPluginManager().callEvent(event);
-				}
-			}, 1) == -1)
+			if (GroupManager.getGMEventHandler().getServer().getScheduler().scheduleSyncDelayedTask(GroupManager.getGMEventHandler().getPlugin(), () -> {
+                            GroupManager.getGMEventHandler().getServer().getPluginManager().callEvent(event);
+                        }, 1) == -1)
 				GroupManager.logger.warning("Could not schedule GM Event.");
 		}
 	}

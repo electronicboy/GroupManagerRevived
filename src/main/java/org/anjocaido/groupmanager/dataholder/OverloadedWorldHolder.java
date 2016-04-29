@@ -106,7 +106,7 @@ public class OverloadedWorldHolder extends WorldDataHolder {
 	@Override
 	public boolean removeGroup(String groupName) {
 
-		if (groupName.equals(getDefaultGroup())) {
+		if (groupName.equals(getDefaultGroup().getName())) {
 			return false;
 		}
 		synchronized(getGroups()) {
@@ -148,16 +148,16 @@ public class OverloadedWorldHolder extends WorldDataHolder {
 	@Override
 	public Collection<User> getUserList() {
 
-		Collection<User> overloadedList = new ArrayList<User>();
+		Collection<User> overloadedList = new ArrayList<>();
 		synchronized(getUsers()) {
 		Collection<User> normalList = getUsers().values();
-		for (User u : normalList) {
-			if (overloadedUsers.containsKey(u.getUUID().toLowerCase())) {
-				overloadedList.add(overloadedUsers.get(u.getUUID().toLowerCase()));
-			} else {
-				overloadedList.add(u);
-			}
-		}
+                normalList.stream().forEach((u) -> {
+                    if (overloadedUsers.containsKey(u.getUUID().toLowerCase())) {
+                        overloadedList.add(overloadedUsers.get(u.getUUID().toLowerCase()));
+                    } else {
+                        overloadedList.add(u);
+                    }
+                });
 		}
 		return overloadedList;
 	}

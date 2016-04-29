@@ -71,9 +71,9 @@ public class GMConfiguration {
 		Yaml configYAML = new Yaml(new SafeConstructor());
 
 		try {
-			FileInputStream configInputStream = new FileInputStream(configFile);
-			GMconfig = (Map<String, Object>) configYAML.load(new UnicodeReader(configInputStream));
-			configInputStream.close();
+                    try (FileInputStream configInputStream = new FileInputStream(configFile)) {
+                        GMconfig = (Map<String, Object>) configYAML.load(new UnicodeReader(configInputStream));
+                    }
 
 		} catch (Exception ex) {
 			throw new IllegalArgumentException("The following file couldn't pass on Parser.\n" + configFile.getPath(), ex);
@@ -145,7 +145,7 @@ public class GMConfiguration {
 			 */
 			GroupManager.logger.log(Level.SEVERE, "There are errors in your config.yml. Using default settings", ex);
 			
-			mirrorsMap = new HashMap<String, Object>();
+			mirrorsMap = new HashMap<>();
 		}
 		// Setup defaults
 		adjustLoggerLevel();
@@ -192,7 +192,7 @@ public class GMConfiguration {
 		try {
 			GroupManager.logger.setLevel(Level.parse(loggerLevel));
 			return;
-		} catch (Exception e) {
+		} catch (IllegalArgumentException | SecurityException e) {
 		}
 
 		GroupManager.logger.setLevel(Level.INFO);

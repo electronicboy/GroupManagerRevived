@@ -50,15 +50,16 @@ public class GroupVariables extends Variables implements Cloneable {
 	/**
 	 * A clone of all vars here.
 	 * 
+         * @param newOwner
 	 * @return GroupVariables clone
 	 */
 	protected GroupVariables clone(Group newOwner) {
 
 		GroupVariables clone = new GroupVariables(newOwner);
 		synchronized(variables) {
-		for (String key : variables.keySet()) {
-			clone.variables.put(key, variables.get(key));
-		}
+                    variables.keySet().stream().forEach((key) -> {
+                        clone.variables.put(key, variables.get(key));
+                    });
 		}
 		newOwner.flagAsChanged();
 		return clone;
@@ -76,13 +77,17 @@ public class GroupVariables extends Variables implements Cloneable {
 			this.variables.remove(name);
 		} catch (Exception e) {
 		}
-		if (name.equals("prefix")) {
-			addVar("prefix", "");
-		} else if (name.equals("suffix")) {
-			addVar("suffix", "");
-		} else if (name.equals("build")) {
-			addVar("build", false);
-		}
+            switch (name) {
+                case "prefix":
+                    addVar("prefix", "");
+                    break;
+                case "suffix":
+                    addVar("suffix", "");
+                    break;
+                case "build":
+                    addVar("build", false);
+                    break;
+            }
 		owner.flagAsChanged();
 	}
 

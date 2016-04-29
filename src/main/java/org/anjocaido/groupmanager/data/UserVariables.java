@@ -31,15 +31,16 @@ public class UserVariables extends Variables {
 	/**
 	 * A clone of all vars here.
 	 * 
+         * @param newOwner
 	 * @return UserVariables clone
 	 */
 	protected UserVariables clone(User newOwner) {
 
 		UserVariables clone = new UserVariables(newOwner);
 		synchronized(variables) {
-		for (String key : variables.keySet()) {
-			clone.variables.put(key, variables.get(key));
-		}
+                    variables.keySet().stream().forEach((key) -> {
+                        clone.variables.put(key, variables.get(key));
+                    });
 		}
 		newOwner.flagAsChanged();
 		return clone;

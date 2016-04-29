@@ -53,11 +53,9 @@ public class GlobalGroups {
 			return true;
 		}
 		synchronized(groups) {
-		for (Group g : groups.values()) {
-			if (g.isChanged()) {
-				return true;
-			}
-		}
+                    if (groups.values().stream().anyMatch((g) -> (g.isChanged()))) {
+                        return true;
+                    }
 		}
 		return false;
 	}
@@ -112,9 +110,9 @@ public class GlobalGroups {
 		 * Load the YAML file.
 		 */
 		try {
-			FileInputStream groupsInputStream = new FileInputStream(GlobalGroupsFile);
-			GGroups = (Map<String, Object>) GGroupYAML.load(new UnicodeReader(groupsInputStream));
-			groupsInputStream.close();
+                    try (FileInputStream groupsInputStream = new FileInputStream(GlobalGroupsFile)) {
+                        GGroups = (Map<String, Object>) GGroupYAML.load(new UnicodeReader(groupsInputStream));
+                    }
 		} catch (Exception ex) {
 			throw new IllegalArgumentException("The following file couldn't pass on Parser.\n" + GlobalGroupsFile.getPath(), ex);
 		}
@@ -124,7 +122,7 @@ public class GlobalGroups {
 
 		if (!GGroups.keySet().isEmpty()) {
 			// Read all global groups
-			Map<String, Object> allGroups = new HashMap<String, Object>();
+			Map<String, Object> allGroups = new HashMap<>();
 
 			try {
 				allGroups = (Map<String, Object>) GGroups.get("groups");
@@ -214,6 +212,7 @@ public class GlobalGroups {
 
 	/**
 	 * Write the globalgroups.yml file
+         * @param overwrite
 	 */
 
 	public void writeGroups(boolean overwrite) {
@@ -222,18 +221,16 @@ public class GlobalGroups {
 
 		if (haveGroupsChanged()) {
 			if (overwrite || (!overwrite && (getTimeStampGroups() >= GlobalGroupsFile.lastModified()))) {
-				Map<String, Object> root = new HashMap<String, Object>();
+				Map<String, Object> root = new HashMap<>();
 
-				Map<String, Object> groupsMap = new HashMap<String, Object>();
+				Map<String, Object> groupsMap = new HashMap<>();
 				root.put("groups", groupsMap);
 				synchronized(groups) {
-				for (String groupKey : groups.keySet()) {
-					Group group = groups.get(groupKey);
-
-					// Group header
-					Map<String, Object> aGroupMap = new HashMap<String, Object>();
-					groupsMap.put(group.getName(), aGroupMap);
-
+                                    groups.keySet().stream().map((groupKey) -> groups.get(groupKey)).forEach((group) -> {
+                                        // Group header
+                                        Map<String, Object> aGroupMap = new HashMap<String, Object>();
+                                        groupsMap.put(group.getName(), aGroupMap);
+                                        
 //					// Info nodes
 //					Map<String, Object> infoMap = new HashMap<String, Object>();
 //					aGroupMap.put("info", infoMap);
@@ -241,10 +238,10 @@ public class GlobalGroups {
 //					for (String infoKey : group.getVariables().getVarKeyList()) {
 //						infoMap.put(infoKey, group.getVariables().getVarObject(infoKey));
 //					}
-
-					// Permission nodes
-					aGroupMap.put("permissions", group.getPermissionList());
-				}
+                                        
+                                        // Permission nodes
+                                        aGroupMap.put("permissions", group.getPermissionList());
+                                    });
 				}
 
 				if (!root.isEmpty()) {
@@ -253,8 +250,7 @@ public class GlobalGroups {
 					final Yaml yaml = new Yaml(opt);
 					try {
 						yaml.dump(root, new OutputStreamWriter(new FileOutputStream(GlobalGroupsFile), "UTF-8"));
-					} catch (UnsupportedEncodingException ex) {
-					} catch (FileNotFoundException ex) {
+					} catch (UnsupportedEncodingException | FileNotFoundException ex) {
 					}
 				}
 				setTimeStampGroups(GlobalGroupsFile.lastModified());
@@ -314,6 +310,7 @@ public class GlobalGroups {
 	 * Creates a new group if it doesn't already exist.
 	 * 
 	 * @param newGroup
+         * @return newGroup or null
 	 */
 	public Group newGroup(Group newGroup) {
 
@@ -330,6 +327,7 @@ public class GlobalGroups {
 	 * Delete a group if it exist.
 	 * 
 	 * @param groupName
+         * @return true or false
 	 */
 	public boolean removeGroup(String groupName) {
 
@@ -471,9 +469,9 @@ public class GlobalGroups {
 
 		setGroupsChanged(false);
 		synchronized(groups) {
-		for (Group g : groups.values()) {
-			g.flagAsSaved();
-		}
+                    groups.values().stream().forEach((g) -> {
+                        g.flagAsSaved();
+                    });
 		}
 	}
 

@@ -32,6 +32,7 @@ public class Group extends DataUnit implements Cloneable {
 	/**
 	 * Constructor for individual World Groups.
 	 * 
+         * @param source
 	 * @param name
 	 */
 	public Group(WorldDataHolder source, String name) {
@@ -86,9 +87,9 @@ public class Group extends DataUnit implements Cloneable {
 					: Collections.unmodifiableList(new ArrayList<String>(this.getInherits()));
 		}
 
-		for (String perm : this.getPermissionList()) {
-			clone.addPermission(perm);
-		}
+                this.getPermissionList().stream().forEach((perm) -> {
+                    clone.addPermission(perm);
+            });
 		clone.variables = ((GroupVariables) variables).clone(clone);
 		//clone.flagAsChanged();
 		return clone;
@@ -114,9 +115,9 @@ public class Group extends DataUnit implements Cloneable {
 					Collections.unmodifiableList(Collections.<String>emptyList())
 					: Collections.unmodifiableList(new ArrayList<String>(this.getInherits()));
 		}
-		for (String perm : this.getPermissionList()) {
-			clone.addPermission(perm);
-		}
+                this.getPermissionList().stream().forEach((perm) -> {
+                    clone.addPermission(perm);
+            });
 		clone.variables = variables.clone(clone);
 		clone.flagAsChanged(); //use this to make the new dataSource save the new group
 		return clone;
@@ -143,7 +144,7 @@ public class Group extends DataUnit implements Cloneable {
 				getDataSource().addGroup(inherit);
 			}
 			if (!inherits.contains(inherit.getName().toLowerCase())) {
-				List<String> clone = new ArrayList<String>(inherits);
+				List<String> clone = new ArrayList<>(inherits);
 				clone.add(inherit.getName().toLowerCase());
 				inherits = Collections.unmodifiableList(clone);
 			}
@@ -159,7 +160,7 @@ public class Group extends DataUnit implements Cloneable {
 
 		if (!isGlobal()) {
 			if (this.inherits.contains(inherit.toLowerCase())) {
-				List<String> clone = new ArrayList<String>(inherits);
+				List<String> clone = new ArrayList<>(inherits);
 				clone.remove(inherit.toLowerCase());
 				inherits = Collections.unmodifiableList(clone);
 				flagAsChanged();

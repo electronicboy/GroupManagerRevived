@@ -7,6 +7,7 @@ package org.anjocaido.groupmanager.data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 import org.anjocaido.groupmanager.GroupManager;
 import org.anjocaido.groupmanager.dataholder.WorldDataHolder;
@@ -126,7 +127,7 @@ public abstract class DataUnit {
 		else
 			source = testSource.getName();
 
-		GroupManager.logger.finest("DataSource: " + source + " - DataUnit: " + getUUID() + " flagged as changed!");
+		GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as changed!", new Object[]{source, getUUID()});
 		// for(StackTraceElement st: Thread.currentThread().getStackTrace()){
 		// GroupManager.logger.finest(st.toString());
 		// }
@@ -149,7 +150,7 @@ public abstract class DataUnit {
 		else
 			source = testSource.getName();
 
-		GroupManager.logger.finest("DataSource: " + source + " - DataUnit: " + getUUID() + " flagged as saved!");
+		GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as saved!", new Object[]{source, getUUID()});
 		changed = false;
 	}
 
@@ -161,7 +162,7 @@ public abstract class DataUnit {
 	public void addPermission(String permission) {
 
 		if (!hasSamePermissionNode(permission)) {
-			List<String> clone = new ArrayList<String>(permissions);
+			List<String> clone = new ArrayList<>(permissions);
 			clone.add(permission);
 			permissions = Collections.unmodifiableList(clone);
 		}
@@ -171,7 +172,7 @@ public abstract class DataUnit {
 	public boolean removePermission(String permission) {
 
 		flagAsChanged();
-		List<String> clone = new ArrayList<String>(permissions);
+		List<String> clone = new ArrayList<>(permissions);
 		boolean ret = clone.remove(permission);
 		permissions = Collections.unmodifiableList(clone);
 		return ret;
@@ -196,7 +197,7 @@ public abstract class DataUnit {
 	public void sortPermissions() {
 
 		if (!isSorted()) {
-			List<String> clone = new ArrayList<String>(permissions);
+			List<String> clone = new ArrayList<>(permissions);
 			Collections.sort(clone, StringPermissionComparator.getInstance());
 			permissions = Collections.unmodifiableList(clone);
 			sorted = true;

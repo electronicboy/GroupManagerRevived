@@ -45,15 +45,15 @@ public abstract class Tasks {
 	public static void copy(InputStream src, File dst) throws IOException {
 
 		InputStream in = src;
-		OutputStream out = new FileOutputStream(dst);
-
-		// Transfer bytes from in to out
-		byte[] buf = new byte[1024];
-		int len;
-		while ((len = in.read(buf)) > 0) {
-			out.write(buf, 0, len);
-		}
-		out.close();
+            // Transfer bytes from in to out
+            try (OutputStream out = new FileOutputStream(dst)) {
+                // Transfer bytes from in to out
+                byte[] buf = new byte[1024];
+                int len;
+                while ((len = in.read(buf)) > 0) {
+                    out.write(buf, 0, len);
+                }
+            }
 		try {
 			in.close();
 		} catch (Exception e) {
@@ -71,21 +71,20 @@ public abstract class Tasks {
 	 * 
 	 * @param data
 	 * @param file
+         * @throws java.io.IOException
 	 */
 	public static void appendStringToFile(String data, String file) throws IOException {
 
 		FileWriter outStream = new FileWriter("." + System.getProperty("file.separator") + file, true);
 
-		BufferedWriter out = new BufferedWriter(outStream);
-
-		data.replaceAll("\n", System.getProperty("line.separator"));
-
-		out.append(new SimpleDateFormat("yyyy-MM-dd HH-mm").format(System.currentTimeMillis()));
-		out.append(System.getProperty("line.separator"));
-		out.append(data);
-		out.append(System.getProperty("line.separator"));
-
-		out.close();
+            try (BufferedWriter out = new BufferedWriter(outStream)) {
+                    String replaceAll = data.replaceAll("\n", System.getProperty("line.separator"));
+                
+                out.append(new SimpleDateFormat("yyyy-MM-dd HH-mm").format(System.currentTimeMillis()));
+                out.append(System.getProperty("line.separator"));
+                out.append(data);
+                out.append(System.getProperty("line.separator"));
+            }
 	}
 
 	public static void removeOldFiles(GroupManager gm, File folder) {

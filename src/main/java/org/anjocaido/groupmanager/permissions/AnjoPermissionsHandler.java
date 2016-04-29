@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 import org.anjocaido.groupmanager.GroupManager;
 import org.anjocaido.groupmanager.data.Group;
@@ -32,7 +33,7 @@ import org.bukkit.entity.Player;
  */
 public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 
-	WorldDataHolder ph = null;
+	private WorldDataHolder ph = null;
 
 	/**
 	 * It needs a WorldDataHolder to work with.
@@ -67,7 +68,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean permission(Player player, String permission) {
 
-		return checkUserPermission(ph.getUser(player.getName()).updatePlayer(player), permission);
+		return checkUserPermission(getPh().getUser(player.getName()).updatePlayer(player), permission);
 	}
 
 	/**
@@ -79,7 +80,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	 */
 	public boolean permission(String playerName, String permission) {
 
-		return checkUserPermission(ph.getUser(playerName), permission);
+		return checkUserPermission(getPh().getUser(playerName), permission);
 	}
 
 	/**
@@ -91,7 +92,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getGroup(String userName) {
 
-		return ph.getUser(userName).getGroup().getName();
+		return getPh().getUser(userName).getGroup().getName();
 	}
 
 	/**
@@ -104,7 +105,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public List<String> getAllPlayersPermissions(String userName) {
 
-		List<String> perms = new ArrayList<String>();
+		List<String> perms = new ArrayList<>();
 
 		perms.addAll(getAllPlayersPermissions(userName, true));
 
@@ -116,18 +117,19 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	 * player. With or without Bukkit child nodes.
 	 * 
 	 * @param userName
+         * @param includeChildren
 	 * @return Set<String> of all players permissions.
 	 */
 	@Override
 	public Set<String> getAllPlayersPermissions(String userName, Boolean includeChildren) {
 
-		Set<String> playerPermArray = new LinkedHashSet<String>();
-		Set<String> overrides = new LinkedHashSet<String>();
+		Set<String> playerPermArray = new LinkedHashSet<>();
+		Set<String> overrides = new LinkedHashSet<>();
 
 		// Add the players own permissions.
-		playerPermArray.addAll(populatePerms(ph.getUser(userName).getPermissionList(), includeChildren));
+		playerPermArray.addAll(populatePerms(getPh().getUser(userName).getPermissionList(), includeChildren));
 
-		ArrayList<String> alreadyProcessed = new ArrayList<String>();
+		ArrayList<String> alreadyProcessed = new ArrayList<>();
 
 		// fetch all group permissions
 		for (String group : getGroups(userName)) {
@@ -135,7 +137,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 			if (!alreadyProcessed.contains(group)) {
 				alreadyProcessed.add(group);
 
-				Set<String> groupPermArray = new LinkedHashSet<String>();
+				Set<String> groupPermArray = new LinkedHashSet<>();
 
 				if (group.startsWith("g:") && GroupManager.getGlobalGroups().hasGroup(group)) {
 					// GlobalGroups
@@ -143,7 +145,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 
 				} else {
 					// World Groups
-					groupPermArray = populatePerms(ph.getGroup(group).getPermissionList(), includeChildren);
+					groupPermArray = populatePerms(getPh().getGroup(group).getPermissionList(), includeChildren);
 				}
 
 				// Add all group permissions, unless negated by earlier permissions.
@@ -208,7 +210,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		for (String part : parts) {
 			builder.append('*');
 			if (playerPermArray.contains("-" + builder.toString())) {
-				GroupManager.logger.fine("Wildcard Negation found for " + node);
+				GroupManager.logger.log(Level.FINE, "Wildcard Negation found for {0}", node);
 				return true;
 			}
 
@@ -219,7 +221,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		/*
 		 * No negated parent found so return false.
 		 */
-		GroupManager.logger.fine("No Negation found for " + node);
+		GroupManager.logger.log(Level.FINE, "No Negation found for {0}", node);
 		return false;
 		
 	}
@@ -227,8 +229,8 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	private Set<String> populatePerms(List<String> permsList, boolean includeChildren) {
 
 		// Create a new array so it's modifiable.
-		List<String> perms = new ArrayList<String>(permsList);
-		Set<String> permArray = new LinkedHashSet<String>();
+		List<String> perms = new ArrayList<>(permsList);
+		Set<String> permArray = new LinkedHashSet<>();
 		Boolean allPerms = false;
 
 		// Allow * node to populate ALL permissions to Bukkit.
@@ -262,25 +264,23 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 				 */
 				if ((includeChildren) || (negated && allPerms)) {
 
-					Map<String, Boolean> children = GroupManager.BukkitPermissions.getAllChildren((negated ? perm.substring(1) : perm), new LinkedHashSet<String>());
+					Map<String, Boolean> children = GroupManager.BukkitPermissions.getAllChildren((negated ? perm.substring(1) : perm), new LinkedHashSet<>());
 
 					if (children != null) {
 						if (negated)
 							if (allPerms) {
 
-								// Remove children of negated nodes
-								for (String child : children.keySet())
-									if (children.get(child))
-										if (permArray.contains(child))
-											permArray.remove(child);
+                                                    // Remove children of negated nodes
+                                                            children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> (permArray.contains(child))).forEach((child) -> {
+                                                                permArray.remove(child);
+                                                    });
 
 							} else {
 
-								// Add child nodes
-								for (String child : children.keySet())
-									if (children.get(child))
-										if ((!permArray.contains(child)) && (!permArray.contains("-" + child)))
-											permArray.add(child);
+                                                    // Add child nodes
+                                                            children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> ((!permArray.contains(child)) && (!permArray.contains("-" + child)))).forEach((child) -> {
+                                                                permArray.add(child);
+                                                    });
 							}
 					}
 				}
@@ -308,15 +308,10 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean inGroup(String name, String group) {
 
-		if (hasGroupInInheritance(ph.getUser(name).getGroup(), group)) {
+		if (hasGroupInInheritance(getPh().getUser(name).getGroup(), group)) {
 			return true;
 		}
-		for (Group subGroup : ph.getUser(name).subGroupListCopy()) {
-			if (hasGroupInInheritance(subGroup, group)) {
-				return true;
-			}
-		}
-		return false;
+		return getPh().getUser(name).subGroupListCopy().stream().anyMatch((subGroup) -> (hasGroupInInheritance(subGroup, group)));
 	}
 
 	/**
@@ -332,7 +327,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getUserPrefix(String user) {
 
-		String prefix = ph.getUser(user).getVariables().getVarString("prefix");
+		String prefix = getPh().getUser(user).getVariables().getVarString("prefix");
 		if (prefix.length() != 0) {
 			return prefix;
 		}
@@ -353,7 +348,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getUserSuffix(String user) {
 
-		String suffix = ph.getUser(user).getVariables().getVarString("suffix");
+		String suffix = getPh().getUser(user).getVariables().getVarString("suffix");
 		if (suffix.length() != 0) {
 			return suffix;
 		}
@@ -399,7 +394,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getGroupPrefix(String groupName) {
 
-		Group g = ph.getGroup(groupName);
+		Group g = getPh().getGroup(groupName);
 		if (g == null) {
 			return "";
 		}
@@ -415,7 +410,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getGroupSuffix(String groupName) {
 
-		Group g = ph.getGroup(groupName);
+		Group g = getPh().getGroup(groupName);
 		if (g == null) {
 			return "";
 		}
@@ -432,7 +427,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean canGroupBuild(String groupName) {
 
-		Group g = ph.getGroup(groupName);
+		Group g = getPh().getGroup(groupName);
 		if (g == null) {
 			return false;
 		}
@@ -450,7 +445,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getGroupPermissionString(String groupName, String variable) {
 
-		Group start = ph.getGroup(groupName);
+		Group start = getPh().getGroup(groupName);
 		if (start == null) {
 			return null;
 		}
@@ -472,7 +467,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public int getGroupPermissionInteger(String groupName, String variable) {
 
-		Group start = ph.getGroup(groupName);
+		Group start = getPh().getGroup(groupName);
 		if (start == null) {
 			return -1;
 		}
@@ -494,7 +489,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean getGroupPermissionBoolean(String group, String variable) {
 
-		Group start = ph.getGroup(group);
+		Group start = getPh().getGroup(group);
 		if (start == null) {
 			return false;
 		}
@@ -516,7 +511,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public double getGroupPermissionDouble(String group, String variable) {
 
-		Group start = ph.getGroup(group);
+		Group start = getPh().getGroup(group);
 		if (start == null) {
 			return -1;
 		}
@@ -537,7 +532,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getUserPermissionString(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return "";
 		}
@@ -554,7 +549,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public int getUserPermissionInteger(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return -1;
 		}
@@ -571,7 +566,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean getUserPermissionBoolean(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return false;
 		}
@@ -588,7 +583,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public double getUserPermissionDouble(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return -1;
 		}
@@ -607,7 +602,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String getPermissionString(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return "";
 		}
@@ -647,7 +642,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public int getPermissionInteger(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return -1;
 		}
@@ -687,7 +682,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public boolean getPermissionBoolean(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return false;
 		}
@@ -727,7 +722,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public double getPermissionDouble(String user, String variable) {
 
-		User auser = ph.getUser(user);
+		User auser = getPh().getUser(user);
 		if (auser == null) {
 			return -1.0D;
 		}
@@ -814,11 +809,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	public boolean checkUserPermission(User user, String permission) {
 
 		PermissionCheckResult result = checkFullGMPermission(user, permission, true);
-		if (result.resultType == PermissionCheckResult.Type.EXCEPTION || result.resultType == PermissionCheckResult.Type.FOUND) {
-			return true;
-		}
-
-		return false;
+		return result.resultType == PermissionCheckResult.Type.EXCEPTION || result.resultType == PermissionCheckResult.Type.FOUND;
 	}
 
 	/**
@@ -975,8 +966,8 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		if (start == null || targetVariable == null) {
 			return null;
 		}
-		LinkedList<Group> stack = new LinkedList<Group>();
-		ArrayList<Group> alreadyVisited = new ArrayList<Group>();
+		LinkedList<Group> stack = new LinkedList<>();
+		ArrayList<Group> alreadyVisited = new ArrayList<>();
 		stack.push(start);
 		alreadyVisited.add(start);
 		while (!stack.isEmpty()) {
@@ -984,13 +975,12 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 			if (now.getVariables().hasVar(targetVariable)) {
 				return now;
 			}
-			for (String sonName : now.getInherits()) {
-				Group son = ph.getGroup(sonName);
-				if (son != null && !alreadyVisited.contains(son)) {
-					stack.push(son);
-					alreadyVisited.add(son);
-				}
-			}
+                        now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
+                            stack.push(son);
+                        return son;
+                    }).forEach((son) -> {
+                        alreadyVisited.add(son);
+                    });
 		}
 		return null;
 	}
@@ -1010,8 +1000,8 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		if (start == null || askedGroup == null) {
 			return false;
 		}
-		LinkedList<Group> stack = new LinkedList<Group>();
-		ArrayList<Group> alreadyVisited = new ArrayList<Group>();
+		LinkedList<Group> stack = new LinkedList<>();
+		ArrayList<Group> alreadyVisited = new ArrayList<>();
 		stack.push(start);
 		alreadyVisited.add(start);
 		while (!stack.isEmpty()) {
@@ -1019,13 +1009,12 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 			if (now.getName().equalsIgnoreCase(askedGroup)) {
 				return true;
 			}
-			for (String sonName : now.getInherits()) {
-				Group son = ph.getGroup(sonName);
-				if (son != null && !alreadyVisited.contains(son)) {
-					stack.push(son);
-					alreadyVisited.add(son);
-				}
-			}
+                        now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
+                            stack.push(son);
+                        return son;
+                    }).forEach((son) -> {
+                        alreadyVisited.add(son);
+                    });
 		}
 		return false;
 	}
@@ -1050,8 +1039,8 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 			return null;
 		}
 		
-		LinkedList<Group> stack = new LinkedList<Group>();
-		List<Group> alreadyVisited = new ArrayList<Group>();
+		LinkedList<Group> stack = new LinkedList<>();
+		List<Group> alreadyVisited = new ArrayList<>();
 		PermissionCheckResult result = new PermissionCheckResult();
 		
 		stack.push(start);
@@ -1077,14 +1066,13 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 				result = resultNow;
 			}
 			
-			for (String sonName : now.getInherits()) {
-				Group son = ph.getGroup(sonName);
-				if (son != null && !alreadyVisited.contains(son)) {
-					// Add rather than push to retain inheritance order.
-					stack.add(son);
-					alreadyVisited.add(son);
-				}
-			}
+                        now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
+                            // Add rather than push to retain inheritance order.
+                            stack.add(son);
+                        return son;
+                        }).forEach((son) -> {
+                            alreadyVisited.add(son);
+                    });
 		}
 		
 		return result;
@@ -1104,19 +1092,18 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		if (start == null) {
 			return null;
 		}
-		LinkedList<Group> stack = new LinkedList<Group>();
-		ArrayList<String> alreadyVisited = new ArrayList<String>();
+		LinkedList<Group> stack = new LinkedList<>();
+		ArrayList<String> alreadyVisited = new ArrayList<>();
 		stack.push(start);
 		alreadyVisited.add(start.getName());
 		while (!stack.isEmpty()) {
 			Group now = stack.pop();
-			for (String sonName : now.getInherits()) {
-				Group son = ph.getGroup(sonName);
-				if (son != null && !alreadyVisited.contains(son.getName())) {
-					stack.push(son);
-					alreadyVisited.add(son.getName());
-				}
-			}
+                        now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son.getName()))).map((son) -> {
+                            stack.push(son);
+                        return son;
+                    }).forEach((son) -> {
+                        alreadyVisited.add(son.getName());
+                    });
 		}
 		return alreadyVisited;
 	}
@@ -1192,10 +1179,10 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public String[] getGroups(String userName) {
 
-		ArrayList<String> allGroups = listAllGroupsInherited(ph.getUser(userName).getGroup());
-		for (Group subg : ph.getUser(userName).subGroupListCopy()) {
-			allGroups.addAll(listAllGroupsInherited(subg));
-		}
+		ArrayList<String> allGroups = listAllGroupsInherited(getPh().getUser(userName).getGroup());
+                getPh().getUser(userName).subGroupListCopy().stream().forEach((subg) -> {
+                    allGroups.addAll(listAllGroupsInherited(subg));
+            });
 
 		String[] arr = new String[allGroups.size()];
 		return allGroups.toArray(arr);
@@ -1217,8 +1204,8 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 		if (start == null || targerPermission == null) {
 			return null;
 		}
-		LinkedList<Group> stack = new LinkedList<Group>();
-		ArrayList<Group> alreadyVisited = new ArrayList<Group>();
+		LinkedList<Group> stack = new LinkedList<>();
+		ArrayList<Group> alreadyVisited = new ArrayList<>();
 		stack.push(start);
 		alreadyVisited.add(start);
 		while (!stack.isEmpty()) {
@@ -1230,13 +1217,12 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 			if (resultNow.resultType.equals(PermissionCheckResult.Type.NEGATION)) {
 				return null;
 			}
-			for (String sonName : now.getInherits()) {
-				Group son = ph.getGroup(sonName);
-				if (son != null && !alreadyVisited.contains(son)) {
-					stack.push(son);
-					alreadyVisited.add(son);
-				}
-			}
+                        now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
+                            stack.push(son);
+                        return son;
+                    }).forEach((son) -> {
+                        alreadyVisited.add(son);
+                    });
 		}
 		return null;
 	}
@@ -1244,20 +1230,20 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public Group getDefaultGroup() {
 
-		return ph.getDefaultGroup();
+		return getPh().getDefaultGroup();
 	}
 
 	@Override
 	public String getInfoString(String entryName, String path, boolean isGroup) {
 
 		if (isGroup) {
-			Group data = ph.getGroup(entryName);
+			Group data = getPh().getGroup(entryName);
 			if (data == null) {
 				return null;
 			}
 			return data.getVariables().getVarString(path);
 		} else {
-			User data = ph.getUser(entryName);
+			User data = getPh().getUser(entryName);
 			if (data == null) {
 				return null;
 			}
@@ -1269,13 +1255,13 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	public int getInfoInteger(String entryName, String path, boolean isGroup) {
 
 		if (isGroup) {
-			Group data = ph.getGroup(entryName);
+			Group data = getPh().getGroup(entryName);
 			if (data == null) {
 				return -1;
 			}
 			return data.getVariables().getVarInteger(path);
 		} else {
-			User data = ph.getUser(entryName);
+			User data = getPh().getUser(entryName);
 			if (data == null) {
 				return -1;
 			}
@@ -1287,13 +1273,13 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	public double getInfoDouble(String entryName, String path, boolean isGroup) {
 
 		if (isGroup) {
-			Group data = ph.getGroup(entryName);
+			Group data = getPh().getGroup(entryName);
 			if (data == null) {
 				return -1;
 			}
 			return data.getVariables().getVarDouble(path);
 		} else {
-			User data = ph.getUser(entryName);
+			User data = getPh().getUser(entryName);
 			if (data == null) {
 				return -1;
 			}
@@ -1306,13 +1292,13 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	public boolean getInfoBoolean(String entryName, String path, boolean isGroup) {
 
 		if (isGroup) {
-			Group data = ph.getGroup(entryName);
+			Group data = getPh().getGroup(entryName);
 			if (data == null) {
 				return false;
 			}
 			return data.getVariables().getVarBoolean(path);
 		} else {
-			User data = ph.getUser(entryName);
+			User data = getPh().getUser(entryName);
 			if (data == null) {
 				return false;
 			}
@@ -1323,24 +1309,38 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
 	@Override
 	public void addUserInfo(String name, String path, Object data) {
 
-		ph.getUser(name).getVariables().addVar(path, data);
+		getPh().getUser(name).getVariables().addVar(path, data);
 	}
 
 	@Override
 	public void removeUserInfo(String name, String path) {
 
-		ph.getUser(name).getVariables().removeVar(path);
+		getPh().getUser(name).getVariables().removeVar(path);
 	}
 
 	@Override
 	public void addGroupInfo(String name, String path, Object data) {
 
-		ph.getGroup(name).getVariables().addVar(path, data);
+		getPh().getGroup(name).getVariables().addVar(path, data);
 	}
 
 	@Override
 	public void removeGroupInfo(String name, String path) {
 
-		ph.getGroup(name).getVariables().removeVar(path);
+		getPh().getGroup(name).getVariables().removeVar(path);
 	}
+
+    /**
+     * @return the ph
+     */
+    public WorldDataHolder getPh() {
+        return ph;
+    }
+
+    /**
+     * @param ph the ph to set
+     */
+    public void setPh(WorldDataHolder ph) {
+        this.ph = ph;
+    }
 }
