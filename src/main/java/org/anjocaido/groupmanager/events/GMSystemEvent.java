@@ -6,53 +6,54 @@ import org.bukkit.event.HandlerList;
 
 /**
  * @author ElgarL
- * 
+ *
  */
 public class GMSystemEvent extends Event {
 
-	/**
-	 * 
-	 */
-	private static final HandlerList handlers = new HandlerList();
+    /**
+     *
+     */
+    private static final HandlerList handlers = new HandlerList();
 
-	@Override
-	public HandlerList getHandlers() {
+    @Override
+    public HandlerList getHandlers() {
 
-		return handlers;
-	}
+        return handlers;
+    }
 
-	public static HandlerList getHandlerList() {
+    public static HandlerList getHandlerList() {
 
-		return handlers;
-	}
+        return handlers;
+    }
 
 	//////////////////////////////
+    protected Action action;
 
-	protected Action action;
+    public GMSystemEvent(Action action) {
 
-	public GMSystemEvent(Action action) {
+        super();
 
-		super();
-		
-		this.action = action;
-	}
+        this.action = action;
+    }
 
-	public Action getAction() {
+    public Action getAction() {
 
-		return this.action;
-	}
+        return this.action;
+    }
 
-	public enum Action {
-		RELOADED, SAVED, DEFAULT_GROUP_CHANGED, VALIDATE_TOGGLE,
-	}
+    public enum Action {
 
-	public void schedule(final GMSystemEvent event) {
+        RELOADED, SAVED, DEFAULT_GROUP_CHANGED, VALIDATE_TOGGLE,
+    }
 
-		synchronized (GroupManager.getGMEventHandler().getServer()) {
-			if (GroupManager.getGMEventHandler().getServer().getScheduler().scheduleSyncDelayedTask(GroupManager.getGMEventHandler().getPlugin(), () -> {
-                            GroupManager.getGMEventHandler().getServer().getPluginManager().callEvent(event);
-                        }, 1) == -1)
-				GroupManager.logger.warning("Could not schedule GM Event.");
-		}
-	}
+    public void schedule(final GMSystemEvent event) {
+
+        synchronized (GroupManager.getGMEventHandler().getServer()) {
+            if (GroupManager.getGMEventHandler().getServer().getScheduler().scheduleSyncDelayedTask(GroupManager.getGMEventHandler().getPlugin(), () -> {
+                GroupManager.getGMEventHandler().getServer().getPluginManager().callEvent(event);
+            }, 1) == -1) {
+                GroupManager.logger.warning("Could not schedule GM Event.");
+            }
+        }
+    }
 }
