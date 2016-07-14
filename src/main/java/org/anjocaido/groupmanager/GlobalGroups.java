@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
+import org.anjocaido.groupmanager.data.DataUnit;
 import org.anjocaido.groupmanager.data.Group;
 import org.anjocaido.groupmanager.events.GMGroupEvent;
 import org.anjocaido.groupmanager.utils.PermissionCheckResult;
@@ -122,7 +123,7 @@ public class GlobalGroups {
 
         if (!GGroups.keySet().isEmpty()) {
             // Read all global groups
-            Map<String, Object> allGroups = new HashMap<>();
+            Map<String, Object> allGroups;
 
             try {
                 allGroups = (Map<String, Object>) GGroups.get("groups");
@@ -167,16 +168,12 @@ public class GlobalGroups {
                     if (element != null) {
                         if (element instanceof List) {
                             try {
-                                for (String node : (List<String>) element) {
-                                    if ((node != null) && !node.isEmpty()) {
-                                        newGroup.addPermission(node);
-                                    }
-                                }
+                                ((List<String>) element).stream().filter(node -> (node != null) && !node.isEmpty()).forEach(newGroup::addPermission);
                             } catch (ClassCastException ex) {
                                 throw new IllegalArgumentException("Invalid permission node for global group:  " + groupName, ex);
                             }
                         } else if (element instanceof String) {
-                            if ((element != null) && !((String) element).isEmpty()) {
+                            if (!((String) element).isEmpty()) {
                                 newGroup.addPermission((String) element);
                             }
                         } else {
@@ -222,15 +219,16 @@ public class GlobalGroups {
 
 		// File GlobalGroupsFile = new File(plugin.getDataFolder(), "globalgroups.yml");
         if (haveGroupsChanged()) {
+            //noinspection ConstantConditions - TODO:
             if (overwrite || (!overwrite && (getTimeStampGroups() >= GlobalGroupsFile.lastModified()))) {
                 Map<String, Object> root = new HashMap<>();
 
                 Map<String, Object> groupsMap = new HashMap<>();
                 root.put("groups", groupsMap);
                 synchronized (groups) {
-                    groups.keySet().stream().map((groupKey) -> groups.get(groupKey)).forEach((group) -> {
+                    groups.keySet().stream().map(groups::get).forEach((group) -> {
                         // Group header
-                        Map<String, Object> aGroupMap = new HashMap<String, Object>();
+                        Map<String, Object> aGroupMap = new HashMap<>();
                         groupsMap.put(group.getName(), aGroupMap);
 
 //					// Info nodes
@@ -251,7 +249,7 @@ public class GlobalGroups {
                     final Yaml yaml = new Yaml(opt);
                     try {
                         yaml.dump(root, new OutputStreamWriter(new FileOutputStream(GlobalGroupsFile), "UTF-8"));
-                    } catch (UnsupportedEncodingException | FileNotFoundException ex) {
+                    } catch (UnsupportedEncodingException | FileNotFoundException ignored) {
                     }
                 }
                 setTimeStampGroups(GlobalGroupsFile.lastModified());
@@ -275,8 +273,6 @@ public class GlobalGroups {
 
     /**
      * Backup the BlobalGroups file
-     *
-     * @param w
      */
     private void backupFile() {
 
@@ -365,11 +361,7 @@ public class GlobalGroups {
      */
     public boolean hasPermission(String groupName, String permissionNode) {
 
-        if (!hasGroup(groupName)) {
-            return false;
-        }
-
-        return groups.get(groupName.toLowerCase()).hasSamePermissionNode(permissionNode);
+        return hasGroup(groupName) && groups.get(groupName.toLowerCase()).hasSamePermissionNode(permissionNode);
 
     }
 
@@ -478,9 +470,7 @@ public class GlobalGroups {
 
         setGroupsChanged(false);
         synchronized (groups) {
-            groups.values().stream().forEach((g) -> {
-                g.flagAsSaved();
-            });
+            groups.values().forEach(DataUnit::flagAsSaved);
         }
     }
 

@@ -10,7 +10,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,6 +22,7 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.anjocaido.groupmanager.GroupManager;
+import org.anjocaido.groupmanager.data.DataUnit;
 import org.anjocaido.groupmanager.data.Group;
 import org.anjocaido.groupmanager.data.User;
 import org.anjocaido.groupmanager.events.GMGroupEvent;
@@ -567,7 +567,7 @@ public class WorldDataHolder {
 
 		// PROCESS GROUPS FILE
         Map<String, List<String>> inheritance = new HashMap<>();
-        Map<String, Object> allGroupsNode = null;
+        Map<String, Object> allGroupsNode;
 
         /*
          * Fetch all groups under the 'groups' entry.
@@ -602,7 +602,7 @@ public class WorldDataHolder {
             /*
              * Fetch this groups child nodes
              */
-            Map<String, Object> thisGroupNode = null;
+            Map<String, Object> thisGroupNode;
 
             try {
                 thisGroupNode = (Map<String, Object>) allGroupsNode.get(groupKey);
@@ -644,7 +644,6 @@ public class WorldDataHolder {
             }
 
 			// PERMISSIONS NODE
-            nodeData = null;
             try {
                 nodeData = thisGroupNode.get("permissions");
             } catch (Exception ex) {
@@ -701,7 +700,6 @@ public class WorldDataHolder {
             }
 
 			// INFO NODE
-            nodeData = null;
             try {
                 nodeData = thisGroupNode.get("info");
             } catch (Exception ex) {
@@ -716,11 +714,10 @@ public class WorldDataHolder {
                 GroupManager.logger.log(Level.WARNING, "The group ''{0}'' has no ''info'' section!", thisGrp.getName());
                 GroupManager.logger.log(Level.WARNING, "Using default values: {0}", groupsFile.getPath());
 
+
             } else if (nodeData instanceof Map) {
                 try {
-                    if (nodeData != null) {
-                        thisGrp.setVariables((Map<String, Object>) nodeData);
-                    }
+                    thisGrp.setVariables((Map<String, Object>) nodeData);
                 } catch (Exception ex) {
                     throw new IllegalArgumentException("Invalid formatting found in 'info' section for group: " + thisGrp.getName() + " in file: " + groupsFile.getPath(), ex);
                 }
@@ -730,7 +727,6 @@ public class WorldDataHolder {
             }
 
 			// INHERITANCE NODE
-            nodeData = null;
             try {
                 nodeData = thisGroupNode.get("inheritance");
             } catch (Exception ex) {
@@ -743,13 +739,11 @@ public class WorldDataHolder {
                      * If no inheritance node is found, or it's empty do
                      * nothing.
                      */
-                } else if (nodeData instanceof List) {
+                } else {
 
                     try {
                         for (String grp : (List<String>) nodeData) {
-                            if (inheritance.get(groupKey) == null) {
-                                List<String> put = inheritance.put(groupKey, new ArrayList<>());
-                            }
+                            inheritance.putIfAbsent(groupKey, new ArrayList<>());
                             inheritance.get(groupKey).add(grp);
                         }
 
@@ -772,7 +766,7 @@ public class WorldDataHolder {
         /*
          * Build the inheritance map and recored any errors
          */
-        inheritance.keySet().stream().forEach((group) -> {
+        inheritance.keySet().forEach((group) -> {
             List<String> inheritedList = inheritance.get(group);
             Group thisGroup = ph.getGroup(group);
             if (thisGroup != null) {
@@ -823,7 +817,7 @@ public class WorldDataHolder {
         }
 
 		// PROCESS USERS FILE
-        Map<String, Object> allUsersNode = null;
+        Map<String, Object> allUsersNode;
 
         /*
          * Fetch all child nodes under the 'users' entry.
@@ -857,7 +851,7 @@ public class WorldDataHolder {
                     throw new IllegalArgumentException("Invalid node type for user entry (" + userCount + ") in file: " + usersFile.getPath(), ex);
                 }
 
-                Map<String, Object> thisUserNode = null;
+                Map<String, Object> thisUserNode;
                 try {
                     thisUserNode = (Map<String, Object>) allUsersNode.get(node);
                 } catch (Exception ex) {
@@ -870,7 +864,7 @@ public class WorldDataHolder {
                 }
 
 				// LASTNAME NODES
-                Object nodeData = null;
+                Object nodeData;
                 try {
 
                     nodeData = thisUserNode.get("lastname");
@@ -886,7 +880,6 @@ public class WorldDataHolder {
                 }
 
 				// USER PERMISSIONS NODES
-                nodeData = null;
                 try {
                     nodeData = thisUserNode.get("permissions");
                 } catch (Exception ex) {
@@ -901,14 +894,9 @@ public class WorldDataHolder {
                 } else {
                     try {
                         if (nodeData instanceof List) {
-                            for (Object o : ((List) nodeData)) {
-                                /*
-                                 * Only add this permission if it's not empty
-                                 */
-                                if (!o.toString().isEmpty()) {
-                                    thisUser.addPermission(o.toString());
-                                }
-                            }
+
+                            ((List) nodeData).stream().filter(o -> !o.toString().isEmpty()).forEach(o -> thisUser.addPermission(o.toString()));
+
                         } else if (nodeData instanceof String) {
 
                             /*
@@ -926,7 +914,6 @@ public class WorldDataHolder {
                 }
 
 				// SUBGROUPS NODES
-                nodeData = null;
                 try {
                     nodeData = thisUserNode.get("subgroups");
                 } catch (Exception ex) {
@@ -960,7 +947,6 @@ public class WorldDataHolder {
                 }
 
 				// USER INFO NODE
-                nodeData = null;
                 try {
                     nodeData = thisUserNode.get("info");
                 } catch (Exception ex) {
@@ -980,7 +966,6 @@ public class WorldDataHolder {
 
 				// END INFO NODE
 				// PRIMARY GROUP
-                nodeData = null;
                 try {
                     nodeData = thisUserNode.get("group");
                 } catch (Exception ex) {
@@ -1063,9 +1048,7 @@ public class WorldDataHolder {
 
                     yaml.dump(root, out);
                 }
-            } catch (UnsupportedEncodingException ex) {
-            } catch (FileNotFoundException ex) {
-            } catch (IOException e) {
+            } catch (IOException ignored) {
             }
         }
 
@@ -1144,9 +1127,7 @@ public class WorldDataHolder {
                 try (OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(usersFile), "UTF-8")) {
                     yaml.dump(root, out);
                 }
-            } catch (UnsupportedEncodingException ex) {
-            } catch (FileNotFoundException ex) {
-            } catch (IOException e) {
+            } catch (IOException ignored) {
             }
         }
 
@@ -1189,7 +1170,7 @@ public class WorldDataHolder {
             // plugins[i].getConfiguration().load();
             try {
                 plugin.getClass().getMethod("setupPermissions").invoke(plugin);
-            } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+            } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ignored) {
             }
         }
     }
@@ -1262,9 +1243,7 @@ public class WorldDataHolder {
 
         setUsersChanged(false);
         synchronized (getUsers()) {
-            getUsers().values().stream().forEach((u) -> {
-                u.flagAsSaved();
-            });
+            getUsers().values().forEach(DataUnit::flagAsSaved);
         }
     }
 
@@ -1275,9 +1254,7 @@ public class WorldDataHolder {
 
         setGroupsChanged(false);
         synchronized (getGroups()) {
-            getGroups().values().stream().forEach((g) -> {
-                g.flagAsSaved();
-            });
+            getGroups().values().forEach(DataUnit::flagAsSaved);
         }
     }
 

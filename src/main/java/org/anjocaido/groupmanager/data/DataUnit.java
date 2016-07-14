@@ -125,7 +125,7 @@ public abstract class DataUnit {
     public void flagAsChanged() {
 
         WorldDataHolder testSource = getDataSource();
-        String source = "";
+        String source;
 
         if (testSource == null) {
             source = "GlobalGroups";
@@ -149,7 +149,7 @@ public abstract class DataUnit {
     public void flagAsSaved() {
 
         WorldDataHolder testSource = getDataSource();
-        String source = "";
+        String source;
 
         if (testSource == null) {
             source = "GlobalGroups";

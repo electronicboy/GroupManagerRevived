@@ -137,31 +137,32 @@ public class WorldsHolder {
         }).map((world) -> {
             GroupManager.logger.log(Level.FINE, "Creating folders for {0}.", world.getName());
             return world;
-        }).forEach((world) -> {
-            setupWorldFolder(world.getName());
-        });
+        }).forEach((world) -> setupWorldFolder(world.getName()));
         /*
          * Loop over all folders within the worlds folder and attempt to load
          * the world data
          */
-        for (File folder : worldsFolder.listFiles()) {
-            if (folder.isDirectory() && !folder.getName().startsWith(".")) {
-                GroupManager.logger.log(Level.INFO, "World Found: {0}", folder.getName());
+        File[] files = worldsFolder.listFiles();
+        if (files != null) {
+            for (File folder : files) {
+                if (folder.isDirectory() && !folder.getName().startsWith(".")) {
+                    GroupManager.logger.log(Level.INFO, "World Found: {0}", folder.getName());
 
-                /*
-                 * don't load any worlds which are already loaded or fully
-                 * mirrored worlds that don't need data.
-                 */
-                if (!worldsData.containsKey(folder.getName().toLowerCase()) && ((!mirrorsGroup.containsKey(folder.getName().toLowerCase())) || (!mirrorsUser.containsKey(folder.getName().toLowerCase())))) {
                     /*
-                     * Call setupWorldFolder to check case sensitivity and
-                     * convert to lower case, before we attempt to load this
-                     * world.
+                     * don't load any worlds which are already loaded or fully
+                     * mirrored worlds that don't need data.
                      */
-                    setupWorldFolder(folder.getName());
-                    loadWorld(folder.getName().toLowerCase());
-                }
+                        if (!worldsData.containsKey(folder.getName().toLowerCase()) && ((!mirrorsGroup.containsKey(folder.getName().toLowerCase())) || (!mirrorsUser.containsKey(folder.getName().toLowerCase())))) {
+                        /*
+                         * Call setupWorldFolder to check case sensitivity and
+                         * convert to lower case, before we attempt to load this
+                         * world.
+                         */
+                        setupWorldFolder(folder.getName());
+                        loadWorld(folder.getName().toLowerCase());
+                    }
 
+                }
             }
         }
     }
@@ -188,13 +189,13 @@ public class WorldsHolder {
                     ArrayList mirrorList = (ArrayList) mirrorsMap.get(source);
 
                     // These worlds fully mirror their parent
-                    mirrorList.stream().forEach((o) -> {
+                    mirrorList.forEach((o) -> {
                         String world = o.toString().toLowerCase();
                         if (!world.equalsIgnoreCase(serverDefaultWorldName)) {
                             try {
                                 mirrorsGroup.remove(world);
                                 mirrorsUser.remove(world);
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                             mirrorsGroup.put(world, getWorldData(source).getName());
                             mirrorsUser.put(world, getWorldData(source).getName());
@@ -227,7 +228,7 @@ public class WorldsHolder {
                                             mirrorsUser.remove(((String) key).toLowerCase());
                                         }
 
-                                    } catch (Exception e) {
+                                    } catch (Exception ignored) {
                                     }
                                     return type;
                                 }).map((type) -> {
@@ -239,9 +240,7 @@ public class WorldsHolder {
                                 }).filter((type) -> (type.equals("users"))).map((_item) -> {
                                     mirrorsUser.put(((String) key).toLowerCase(), getWorldData(source).getName());
                                     return _item;
-                                }).forEach((_item) -> {
-                                    GroupManager.logger.log(Level.FINE, "Adding users mirror for {0}.", key);
-                                });
+                                }).forEach((_item) -> GroupManager.logger.log(Level.FINE, "Adding users mirror for {0}.", key));
 
                                 // Track this world so we can create a datasource for it later
                                 mirroredWorlds.add((String) key);
@@ -265,9 +264,7 @@ public class WorldsHolder {
             }).map((world) -> {
                 setupWorldFolder(world);
                 return world;
-            }).forEach((world) -> {
-                loadWorld(world, true);
-            });
+            }).forEach((world) -> loadWorld(world, true));
         }
     }
 
@@ -290,9 +287,7 @@ public class WorldsHolder {
                 w.reloadUsers();
             }
             return w;
-        }).forEach((w) -> {
-            alreadyDone.add(w);
-        });
+        }).forEach(alreadyDone::add);
 
     }
 
@@ -562,6 +557,7 @@ public class WorldsHolder {
 
         worldsFolder = new File(plugin.getDataFolder(), "worlds");
         if (!worldsFolder.exists()) {
+            //noinspection ResultOfMethodCallIgnored
             worldsFolder.mkdirs();
         }
 
@@ -576,11 +572,13 @@ public class WorldsHolder {
                 /*
                  * Rename the old folder to the new lower cased format
                  */
+                //noinspection ResultOfMethodCallIgnored
                 casedWorldFolder.renameTo(new File(worldsFolder, worldNameLowered));
             } else {
                 /*
                  * Else we just create the folder
                  */
+                //noinspection ResultOfMethodCallIgnored
                 defaultWorldFolder.mkdirs();
             }
         }
@@ -635,6 +633,7 @@ public class WorldsHolder {
         }
         File toWorldGroups = new File(toWorldFolder, "groups.yml");
         File toWorldUsers = new File(toWorldFolder, "users.yml");
+        //noinspection ResultOfMethodCallIgnored
         toWorldFolder.mkdirs();
         try {
             Tasks.copy(fromWorldGroups, toWorldGroups);
@@ -713,10 +712,8 @@ public class WorldsHolder {
             // Set the file TimeStamps as it will be default from the initial load.
             thisWorldData.setTimeStamps();
 
-            if (thisWorldData != null) {
-                GroupManager.logger.log(Level.FINEST, "Successful load of world {0}...", worldName);
-                worldsData.put(worldNameLowered, thisWorldData);
-            }
+            GroupManager.logger.log(Level.FINEST, "Successful load of world {0}...", worldName);
+            worldsData.put(worldNameLowered, thisWorldData);
 
             //GroupManager.logger.severe("Failed to load world " + worldName + "...");
         }

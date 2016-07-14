@@ -5,7 +5,6 @@
 package org.anjocaido.groupmanager.permissions;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -137,7 +136,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             if (!alreadyProcessed.contains(group)) {
                 alreadyProcessed.add(group);
 
-                Set<String> groupPermArray = new LinkedHashSet<>();
+                Set<String> groupPermArray;
 
                 if (group.startsWith("g:") && GroupManager.getGlobalGroups().hasGroup(group)) {
                     // GlobalGroups
@@ -170,11 +169,9 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
         }
 
 		// Process overridden permissions
-        Iterator<String> itr = overrides.iterator();
 
-        while (itr.hasNext()) {
 
-            String node = itr.next();
+        for (String node : overrides) {
 
             if (playerPermArray.contains("-" + node)) {
                 playerPermArray.remove("-" + node);
@@ -243,10 +240,10 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
         }
 
         for (String perm : perms) {
-            /**
-             * all permission sets are passed here pre-sorted, alphabetically.
-             * This means negated nodes will be processed before all permissions
-             * other than *.
+            /*
+              all permission sets are passed here pre-sorted, alphabetically.
+              This means negated nodes will be processed before all permissions
+              other than *.
              */
             boolean negated = perm.startsWith("-");
 
@@ -257,10 +254,10 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
                     permArray.remove(perm.substring(1));
                 }
 
-                /**
-                 * Process child nodes if required, or this is a negated node
-                 * AND we used * to include all permissions, in which case we
-                 * need to remove all children of that node.
+                /*
+                  Process child nodes if required, or this is a negated node
+                  AND we used * to include all permissions, in which case we
+                  need to remove all children of that node.
                  */
                 if ((includeChildren) || (negated && allPerms)) {
 
@@ -271,16 +268,12 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
                             if (allPerms) {
 
                                 // Remove children of negated nodes
-                                children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> (permArray.contains(child))).forEach((child) -> {
-                                    permArray.remove(child);
-                                });
+                                children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> (permArray.contains(child))).forEach(permArray::remove);
 
                             } else {
 
                                 // Add child nodes
-                                children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> ((!permArray.contains(child)) && (!permArray.contains("-" + child)))).forEach((child) -> {
-                                    permArray.add(child);
-                                });
+                                children.keySet().stream().filter((child) -> (children.get(child))).filter((child) -> ((!permArray.contains(child)) && (!permArray.contains("-" + child)))).forEach(permArray::add);
                             }
                         }
                     }
@@ -616,12 +609,9 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             if (!auser.isSubGroupsEmpty()) {
                 for (Group subGroup : auser.subGroupListCopy()) {
                     result = nextGroupWithVariable(subGroup, variable);
-                    // Found value?
-                    if (result != null) {
-                        continue;
-                    }
                 }
             }
+
             if (result == null) {
                 return "";
             }
@@ -659,10 +649,6 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             if (!auser.isSubGroupsEmpty()) {
                 for (Group subGroup : auser.subGroupListCopy()) {
                     result = nextGroupWithVariable(subGroup, variable);
-                    // Found value?
-                    if (result != null) {
-                        continue;
-                    }
                 }
             }
             if (result == null) {
@@ -702,10 +688,6 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             if (!auser.isSubGroupsEmpty()) {
                 for (Group subGroup : auser.subGroupListCopy()) {
                     result = nextGroupWithVariable(subGroup, variable);
-                    // Found value?
-                    if (result != null) {
-                        continue;
-                    }
                 }
             }
             if (result == null) {
@@ -746,9 +728,6 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
                 for (Group subGroup : auser.subGroupListCopy()) {
                     result = nextGroupWithVariable(subGroup, variable);
                     // Found value?
-                    if (result != null) {
-                        continue;
-                    }
                 }
             }
             if (result == null) {
@@ -988,9 +967,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
                 stack.push(son);
                 return son;
-            }).forEach((son) -> {
-                alreadyVisited.add(son);
-            });
+            }).forEach(alreadyVisited::add);
         }
         return null;
     }
@@ -1021,9 +998,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
                 stack.push(son);
                 return son;
-            }).forEach((son) -> {
-                alreadyVisited.add(son);
-            });
+            }).forEach(alreadyVisited::add);
         }
         return false;
     }
@@ -1079,9 +1054,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
                 // Add rather than push to retain inheritance order.
                 stack.add(son);
                 return son;
-            }).forEach((son) -> {
-                alreadyVisited.add(son);
-            });
+            }).forEach(alreadyVisited::add);
         }
 
         return result;
@@ -1110,9 +1083,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son.getName()))).map((son) -> {
                 stack.push(son);
                 return son;
-            }).forEach((son) -> {
-                alreadyVisited.add(son.getName());
-            });
+            }).forEach((son) -> alreadyVisited.add(son.getName()));
         }
         return alreadyVisited;
     }
@@ -1189,9 +1160,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
     public String[] getGroups(String userName) {
 
         ArrayList<String> allGroups = listAllGroupsInherited(getPh().getUser(userName).getGroup());
-        getPh().getUser(userName).subGroupListCopy().stream().forEach((subg) -> {
-            allGroups.addAll(listAllGroupsInherited(subg));
-        });
+        getPh().getUser(userName).subGroupListCopy().forEach(subg -> allGroups.addAll(listAllGroupsInherited(subg)));
 
         String[] arr = new String[allGroups.size()];
         return allGroups.toArray(arr);
@@ -1229,9 +1198,7 @@ public class AnjoPermissionsHandler extends PermissionsReaderInterface {
             now.getInherits().stream().map((sonName) -> getPh().getGroup(sonName)).filter((son) -> (son != null && !alreadyVisited.contains(son))).map((son) -> {
                 stack.push(son);
                 return son;
-            }).forEach((son) -> {
-                alreadyVisited.add(son);
-            });
+            }).forEach(alreadyVisited::add);
         }
         return null;
     }

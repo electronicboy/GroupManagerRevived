@@ -57,9 +57,7 @@ public class GroupVariables extends Variables implements Cloneable {
 
         GroupVariables clone = new GroupVariables(newOwner);
         synchronized (variables) {
-            variables.keySet().stream().forEach((key) -> {
-                clone.variables.put(key, variables.get(key));
-            });
+            variables.keySet().forEach((key) -> clone.variables.put(key, variables.get(key)));
         }
         newOwner.flagAsChanged();
         return clone;
@@ -73,10 +71,9 @@ public class GroupVariables extends Variables implements Cloneable {
     @Override
     public void removeVar(String name) {
 
-        try {
+        if (this.variables.containsKey(name))
             this.variables.remove(name);
-        } catch (Exception e) {
-        }
+
         switch (name) {
             case "prefix":
                 addVar("prefix", "");

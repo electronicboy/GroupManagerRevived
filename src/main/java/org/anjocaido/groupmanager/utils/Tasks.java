@@ -44,19 +44,18 @@ public abstract class Tasks {
 
     public static void copy(InputStream src, File dst) throws IOException {
 
-        InputStream in = src;
         // Transfer bytes from in to out
         try (OutputStream out = new FileOutputStream(dst)) {
             // Transfer bytes from in to out
             byte[] buf = new byte[1024];
             int len;
-            while ((len = in.read(buf)) > 0) {
+            while ((len = src.read(buf)) > 0) {
                 out.write(buf, 0, len);
             }
         }
         try {
-            in.close();
-        } catch (Exception e) {
+            src.close();
+        } catch (Exception ignored) {
         }
     }
 
@@ -78,8 +77,6 @@ public abstract class Tasks {
         FileWriter outStream = new FileWriter("." + System.getProperty("file.separator") + file, true);
 
         try (BufferedWriter out = new BufferedWriter(outStream)) {
-            String replaceAll = data.replaceAll("\n", System.getProperty("line.separator"));
-
             out.append(new SimpleDateFormat("yyyy-MM-dd HH-mm").format(System.currentTimeMillis()));
             out.append(System.getProperty("line.separator"));
             out.append(data);
@@ -91,12 +88,19 @@ public abstract class Tasks {
 
         if (folder.isDirectory()) {
             long oldTime = System.currentTimeMillis() - (((long) gm.getGMConfig().getBackupDuration() * 60 * 60) * 1000);
-            for (File olds : folder.listFiles()) {
+            if (folder.listFiles() == null)
+                return;
+            File[] files = folder.listFiles();
+            if (files == null)
+                return;
+
+            for (File olds : files) {
                 if (olds.isFile()) {
                     if (olds.lastModified() < oldTime) {
                         try {
+                            //noinspection ResultOfMethodCallIgnored
                             olds.delete();
-                        } catch (Exception e) {
+                        } catch (Exception ignored) {
                         }
                     }
                 }
@@ -121,14 +125,16 @@ public abstract class Tasks {
         if (list == null) {
             return "";
         }
-        String result = "";
+        return String.join(", ", list);
+
+        /* - Old code, New one should work.
         for (int i = 0; i < list.size(); i++) {
+
             result += list.get(i);
             if (i < list.size() - 1) {
                 result += ", ";
             }
-        }
-        return result;
+        } */
     }
 
     public static String getStringArrayInString(String[] list) {
@@ -136,14 +142,16 @@ public abstract class Tasks {
         if (list == null) {
             return "";
         }
+
+        return String.join(", ", (CharSequence[]) list);
+        /*
         String result = "";
         for (int i = 0; i < list.length; i++) {
             result += list[i];
             if (i < ((list.length) - 1)) {
                 result += ", ";
             }
-        }
-        return result;
+        } */
     }
 
     public static String getGroupListInString(List<Group> list) {
@@ -166,11 +174,13 @@ public abstract class Tasks {
         if (arr.length == 0) {
             return "";
         }
-        String out = arr[0].toString();
+
+        /* String out = arr[0];
         for (int i = 1; i < arr.length; i++) {
             out += separator + arr[i];
-        }
-        return out;
+        } */
+
+        return String.join(separator, (CharSequence[]) arr);
     }
 
 }

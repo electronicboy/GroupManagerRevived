@@ -37,9 +37,7 @@ public class UsersDataHolder {
         this.dataSource = dataSource;
         //push this data source to the users, so they pull the correct groups data.
         synchronized (users) {
-            users.values().stream().forEach((user) -> {
-                user.setDataSource(this.dataSource);
-            });
+            users.values().forEach((user) -> user.setDataSource(this.dataSource));
         }
     }
 

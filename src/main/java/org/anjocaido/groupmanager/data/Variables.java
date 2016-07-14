@@ -79,7 +79,7 @@ public abstract class Variables implements Cloneable {
 
         Object o = variables.get(name);
         try {
-            return o == null ? false : Boolean.parseBoolean(o.toString());
+            return o != null && Boolean.parseBoolean(o.toString());
         } catch (Exception e) {
             return false;
         }
@@ -156,7 +156,7 @@ public abstract class Variables implements Cloneable {
 
         try {
             variables.remove(name);
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         owner.flagAsChanged();
     }
@@ -164,14 +164,12 @@ public abstract class Variables implements Cloneable {
     public static Object parseVariableValue(String value) {
 
         try {
-            Integer i = Integer.parseInt(value);
-            return i;
-        } catch (NumberFormatException e) {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException ignored) {
         }
         try {
-            Double d = Double.parseDouble(value);
-            return d;
-        } catch (NumberFormatException e) {
+            return Double.parseDouble(value);
+        } catch (NumberFormatException ignored) {
         }
         if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("yes") || value.equalsIgnoreCase("on")) {
             return true;

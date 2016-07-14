@@ -54,6 +54,7 @@ public class GMConfiguration {
     public void load() {
 
         if (!plugin.getDataFolder().exists()) {
+            //noinspection ResultOfMethodCallIgnored
             plugin.getDataFolder().mkdirs();
         }
 
@@ -192,7 +193,7 @@ public class GMConfiguration {
         try {
             GroupManager.logger.setLevel(Level.parse(loggerLevel));
             return;
-        } catch (IllegalArgumentException | SecurityException e) {
+        } catch (IllegalArgumentException | SecurityException ignored) {
         }
 
         GroupManager.logger.setLevel(Level.INFO);

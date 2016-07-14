@@ -38,9 +38,7 @@ public class UserVariables extends Variables {
 
         UserVariables clone = new UserVariables(newOwner);
         synchronized (variables) {
-            variables.keySet().stream().forEach((key) -> {
-                clone.variables.put(key, variables.get(key));
-            });
+            variables.keySet().forEach((key) -> clone.variables.put(key, variables.get(key)));
         }
         newOwner.flagAsChanged();
         return clone;

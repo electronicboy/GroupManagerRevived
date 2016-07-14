@@ -4,7 +4,6 @@
  */
 package org.anjocaido.groupmanager.data;
 
-//import com.sun.org.apache.bcel.internal.generic.AALOAD;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -58,9 +57,7 @@ public class User extends DataUnit implements Cloneable {
         // Clone all subgroups.
         clone.subGroups.addAll(this.subGroupListStringCopy());
 
-        this.getPermissionList().stream().forEach((perm) -> {
-            clone.addPermission(perm);
-        });
+        this.getPermissionList().forEach(clone::addPermission);
 		// clone.variables = this.variables.clone();
         // clone.flagAsChanged();
         return clone;
@@ -89,9 +86,7 @@ public class User extends DataUnit implements Cloneable {
         // Clone all subgroups.
         clone.subGroups.addAll(this.subGroupListStringCopy());
 
-        this.getPermissionList().stream().forEach((perm) -> {
-            clone.addPermission(perm);
-        });
+        this.getPermissionList().forEach(clone::addPermission);
 
         clone.variables = this.variables.clone(this);
         clone.flagAsChanged();
@@ -110,9 +105,7 @@ public class User extends DataUnit implements Cloneable {
         // Clone all subgroups.
         clone.subGroups.addAll(this.subGroupListStringCopy());
 
-        this.getPermissionList().stream().forEach((perm) -> {
-            clone.addPermission(perm);
-        });
+        this.getPermissionList().forEach(clone::addPermission);
 
         clone.variables = this.variables.clone(this);
         clone.flagAsChanged();
@@ -258,7 +251,7 @@ public class User extends DataUnit implements Cloneable {
                 GroupManager.getGMEventHandler().callEvent(this, Action.USER_SUBGROUP_CHANGED);
                 return true;
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
         return false;
     }
@@ -301,9 +294,7 @@ public class User extends DataUnit implements Cloneable {
 
         //UserVariables temp = new UserVariables(this, varList);
         variables.clearVars();
-        varList.keySet().stream().forEach((key) -> {
-            variables.addVar(key, varList.get(key));
-        });
+        varList.keySet().forEach((key) -> variables.addVar(key, varList.get(key)));
         flagAsChanged();
         if (GroupManager.isLoaded()) {
 			//if (!GroupManager.BukkitPermissions.isPlayer_join())

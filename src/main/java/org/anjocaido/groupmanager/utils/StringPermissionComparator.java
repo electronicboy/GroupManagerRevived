@@ -12,6 +12,7 @@ import java.util.Comparator;
  */
 public class StringPermissionComparator implements Comparator<String> {
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public int compare(String permA, String permB) {
 

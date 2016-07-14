@@ -83,12 +83,10 @@ public class Group extends DataUnit implements Cloneable {
             clone = new Group(getDataSource(), this.getName());
             clone.inherits = this.getInherits().isEmpty()
                     ? Collections.unmodifiableList(Collections.<String>emptyList())
-                    : Collections.unmodifiableList(new ArrayList<String>(this.getInherits()));
+                    : Collections.unmodifiableList(new ArrayList<>(this.getInherits()));
         }
 
-        this.getPermissionList().stream().forEach((perm) -> {
-            clone.addPermission(perm);
-        });
+        this.getPermissionList().forEach(clone::addPermission);
         clone.variables = ((GroupVariables) variables).clone(clone);
         //clone.flagAsChanged();
         return clone;
@@ -112,11 +110,9 @@ public class Group extends DataUnit implements Cloneable {
         if (!isGlobal()) {
             clone.inherits = this.getInherits().isEmpty()
                     ? Collections.unmodifiableList(Collections.<String>emptyList())
-                    : Collections.unmodifiableList(new ArrayList<String>(this.getInherits()));
+                    : Collections.unmodifiableList(new ArrayList<>(this.getInherits()));
         }
-        this.getPermissionList().stream().forEach((perm) -> {
-            clone.addPermission(perm);
-        });
+        this.getPermissionList().forEach(clone::addPermission);
         clone.variables = variables.clone(clone);
         clone.flagAsChanged(); //use this to make the new dataSource save the new group
         return clone;

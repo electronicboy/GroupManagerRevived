@@ -120,10 +120,7 @@ public class BukkitPermissions {
 
         registeredPermissions.clear();
 
-        Bukkit.getPluginManager().getPermissions().stream().forEach((perm) -> {
-            registeredPermissions.put(perm.getName().toLowerCase(), perm);
-        });
-
+        Bukkit.getPluginManager().getPermissions().forEach((perm) -> registeredPermissions.put(perm.getName().toLowerCase(), perm));
     }
 
     public void updatePermissions(Player player) {
@@ -187,7 +184,7 @@ public class BukkitPermissions {
          * and the player has the 'groupmanager.noofflineperms' permission.
          */
         if (!Bukkit.getServer().getOnlineMode()
-                && (newPerms.containsKey("groupmanager.noofflineperms") && (newPerms.get("groupmanager.noofflineperms") == true))) {
+                && (newPerms.containsKey("groupmanager.noofflineperms") && newPerms.get("groupmanager.noofflineperms"))) {
             removeAttachment(name);
             return;
         }
@@ -227,34 +224,32 @@ public class BukkitPermissions {
 
         List<String> result = new ArrayList<>();
 
-        for (String key : permList) {
-            /*
-             * Ignore stupid plugins which add empty permission nodes.
-             */
-            if (!key.isEmpty()) {
-                String a = key.charAt(0) == '-' ? key.substring(1) : key;
-                Map<String, Boolean> allchildren = GroupManager.BukkitPermissions.getAllChildren(a, new HashSet<>());
-                if (allchildren != null) {
+        /*
+         * Ignore stupid plugins which add empty permission nodes.
+         */// Insert the parent node before the child
+        permList.stream().filter(key -> !key.isEmpty()).forEach(key -> {
+            String a = key.charAt(0) == '-' ? key.substring(1) : key;
+            Map<String, Boolean> allchildren = GroupManager.BukkitPermissions.getAllChildren(a, new HashSet<>());
+            if (allchildren != null) {
 
-                    ListIterator<String> itr = result.listIterator();
+                ListIterator<String> itr = result.listIterator();
 
-                    while (itr.hasNext()) {
-                        String node = itr.next();
-                        String b = node.charAt(0) == '-' ? node.substring(1) : node;
+                while (itr.hasNext()) {
+                    String node = itr.next();
+                    String b = node.charAt(0) == '-' ? node.substring(1) : node;
 
-                        // Insert the parent node before the child
-                        if (allchildren.containsKey(b)) {
-                            itr.set(key);
-                            itr.add(node);
-                            break;
-                        }
+                    // Insert the parent node before the child
+                    if (allchildren.containsKey(b)) {
+                        itr.set(key);
+                        itr.add(node);
+                        break;
                     }
                 }
-                if (!result.contains(key)) {
-                    result.add(key);
-                }
             }
-        }
+            if (!result.contains(key)) {
+                result.add(key);
+            }
+        });
 
         return result;
     }
@@ -274,9 +269,7 @@ public class BukkitPermissions {
             perms.add(key);
             return key;
         }).filter((key) -> (includeChildren)).map((key) -> getAllChildren(key, new HashSet<>())).filter((children) -> (children != null)).forEach((children) -> {
-            children.keySet().stream().filter((node) -> (!perms.contains(node))).forEach((node) -> {
-                perms.add(node);
-            });
+            children.keySet().stream().filter((node) -> (!perms.contains(node))).forEach(perms::add);
         });
         return perms;
     }
@@ -306,9 +299,7 @@ public class BukkitPermissions {
                 children.keySet().stream().filter((childName) -> (!alreadyVisited.containsKey(childName))).map((childName) -> {
                     stack.push(childName);
                     return childName;
-                }).forEach((childName) -> {
-                    alreadyVisited.put(childName, children.get(childName));
-                });
+                }).forEach((childName) -> alreadyVisited.put(childName, children.get(childName)));
             }
         }
         alreadyVisited.remove(node);
@@ -357,9 +348,7 @@ public class BukkitPermissions {
          * entry.getKey() + " = " + entry.getValue()); }
          */
         perms.add("Effective Permissions:");
-        player.getEffectivePermissions().stream().filter((info) -> (info.getValue() == true)).forEach((info) -> {
-            perms.add(" " + info.getPermission() + " = " + info.getValue());
-        });
+        player.getEffectivePermissions().stream().filter(PermissionAttachmentInfo::getValue).forEach((info) -> perms.add(" " + info.getPermission() + " = " + info.getValue()));
         return perms;
     }
 
@@ -368,9 +357,7 @@ public class BukkitPermissions {
      */
     public void updateAllPlayers() {
 
-        Bukkit.getServer().getOnlinePlayers().stream().forEach((player) -> {
-            updatePermissions(player);
-        });
+        Bukkit.getServer().getOnlinePlayers().forEach(this::updatePermissions);
     }
 
     /**
@@ -388,7 +375,7 @@ public class BukkitPermissions {
     /**
      * Force remove any attachments
      *
-     * @param player
+     * @param playerName
      */
     private void removeAttachment(String playerName) {
 
@@ -406,9 +393,7 @@ public class BukkitPermissions {
         /*
          * Remove all attachments.
          */
-        attachments.keySet().stream().forEach((key) -> {
-            attachments.get(key).remove();
-        });
+        attachments.keySet().forEach((key) ->attachments.get(key).remove());
         attachments.clear();
     }
 
