@@ -1,4 +1,4 @@
-name: GroupManagerRevived
+name: GroupManager
 version: 2.13-SNAPSHOT
 main: org.anjocaido.groupmanager.GroupManager
 website: https://github.com/Sycholic/GroupManagerRevived

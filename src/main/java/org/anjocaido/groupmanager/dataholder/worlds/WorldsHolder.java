@@ -199,7 +199,6 @@ public class WorldsHolder {
                             }
                             mirrorsGroup.put(world, getWorldData(source).getName());
                             mirrorsUser.put(world, getWorldData(source).getName());
-
                             // Track this world so we can create a datasource for it later
                             mirroredWorlds.add(o.toString());
 
