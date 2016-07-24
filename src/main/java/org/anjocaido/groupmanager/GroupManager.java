@@ -4,33 +4,19 @@
  */
 package org.anjocaido.groupmanager;
 
-import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
-import org.anjocaido.groupmanager.permissions.BukkitPermissions;
-import org.anjocaido.groupmanager.utils.GroupManagerPermissions;
-import org.anjocaido.groupmanager.tasks.BukkitPermsUpdateTask;
-import org.anjocaido.groupmanager.data.Variables;
-import org.anjocaido.groupmanager.data.User;
 import org.anjocaido.groupmanager.data.Group;
+import org.anjocaido.groupmanager.data.User;
+import org.anjocaido.groupmanager.data.Variables;
 import org.anjocaido.groupmanager.dataholder.OverloadedWorldHolder;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.Collectors;
-
 import org.anjocaido.groupmanager.dataholder.worlds.WorldsHolder;
 import org.anjocaido.groupmanager.events.GMSystemEvent;
 import org.anjocaido.groupmanager.events.GMWorldListener;
 import org.anjocaido.groupmanager.events.GroupManagerEventHandler;
+import org.anjocaido.groupmanager.permissions.AnjoPermissionsHandler;
+import org.anjocaido.groupmanager.permissions.BukkitPermissions;
+import org.anjocaido.groupmanager.tasks.BukkitPermsUpdateTask;
 import org.anjocaido.groupmanager.utils.GMLoggerHandler;
+import org.anjocaido.groupmanager.utils.GroupManagerPermissions;
 import org.anjocaido.groupmanager.utils.PermissionCheckResult;
 import org.anjocaido.groupmanager.utils.Tasks;
 import org.bukkit.Bukkit;
@@ -45,6 +31,16 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -2214,9 +2210,15 @@ public class GroupManager extends JavaPlugin {
         players = this.getServer().matchPlayer(playerName);
         if (players.isEmpty()) {
             // Check for an offline player (exact match).
-            if (Arrays.asList(this.getServer().getOfflinePlayers()).contains(Bukkit.getOfflinePlayer(playerName))) {
-                match.add(playerName);
-            } else {
+            Boolean found = false;
+            for (OfflinePlayer offlinePlayer : this.getServer().getOfflinePlayers()) {
+                if (Objects.equals(offlinePlayer.getName(), playerName)) {
+                    match.add(playerName);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
                 // look for partial matches
                 for (OfflinePlayer offline : this.getServer().getOfflinePlayers()) {
                     if (offline.getName().toLowerCase().startsWith(playerName.toLowerCase())) {
