@@ -133,7 +133,7 @@ public abstract class DataUnit {
             source = testSource.getName();
         }
 
-        GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as changed!", new Object[]{source, getUUID()});
+        GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as changed!", new String[]{source, getUUID()});
 		// for(StackTraceElement st: Thread.currentThread().getStackTrace()){
         // GroupManager.logger.finest(st.toString());
         // }
@@ -157,7 +157,7 @@ public abstract class DataUnit {
             source = testSource.getName();
         }
 
-        GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as saved!", new Object[]{source, getUUID()});
+        GroupManager.logger.log(Level.FINEST, "DataSource: {0} - DataUnit: {1} flagged as saved!", new String[]{source, getUUID()});
         changed = false;
     }
 

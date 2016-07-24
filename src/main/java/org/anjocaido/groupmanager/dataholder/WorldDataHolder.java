@@ -637,7 +637,7 @@ public class WorldDataHolder {
                  * already claimed that position.
                  */
                 if (ph.getDefaultGroup() != null) {
-                    GroupManager.logger.log(Level.WARNING, "The group ''{0}'' is claiming to be default where ''{1}'' already was.", new Object[]{thisGrp.getName(), ph.getDefaultGroup().getName()});
+                    GroupManager.logger.log(Level.WARNING, "The group ''{0}'' is claiming to be default where ''{1}'' already was.", new String[]{thisGrp.getName(), ph.getDefaultGroup().getName()});
                     GroupManager.logger.log(Level.WARNING, "Overriding first default request in file: {0}", groupsFile.getPath());
                 }
                 ph.setDefaultGroup(thisGrp);
@@ -775,7 +775,7 @@ public class WorldDataHolder {
                     if (inheritedGroup != null) {
                         thisGroup.addInherits(inheritedGroup);
                     } else {
-                        GroupManager.logger.log(Level.WARNING, "Inherited group ''{0}'' not found for group {1}. Ignoring entry in file: {2}", new Object[]{inheritedKey, thisGroup.getName(), groupsFile.getPath()});
+                        GroupManager.logger.log(Level.WARNING, "Inherited group ''{0}'' not found for group {1}. Ignoring entry in file: {2}", new String[]{inheritedKey, thisGroup.getName(), groupsFile.getPath()});
                     }
                 });
             }
@@ -927,13 +927,13 @@ public class WorldDataHolder {
                 } else if (nodeData instanceof List) {
                     for (Object o : ((List) nodeData)) {
                         if (o == null) {
-                            GroupManager.logger.log(Level.WARNING, "Invalid Subgroup data for user: {0}. Ignoring entry in file: {1}", new Object[]{thisUser.getLastName(), usersFile.getPath()});
+                            GroupManager.logger.log(Level.WARNING, "Invalid Subgroup data for user: {0}. Ignoring entry in file: {1}", new String[]{thisUser.getLastName(), usersFile.getPath()});
                         } else {
                             Group subGrp = ph.getGroup(o.toString());
                             if (subGrp != null) {
                                 thisUser.addSubGroup(subGrp);
                             } else {
-                                GroupManager.logger.log(Level.WARNING, "Subgroup ''{0}'' not found for user: {1}. Ignoring entry in file: {2}", new Object[]{o.toString(), thisUser.getLastName(), usersFile.getPath()});
+                                GroupManager.logger.log(Level.WARNING, "Subgroup ''{0}'' not found for user: {1}. Ignoring entry in file: {2}", new String[]{o.toString(), thisUser.getLastName(), usersFile.getPath()});
                             }
                         }
                     }
@@ -942,7 +942,7 @@ public class WorldDataHolder {
                     if (subGrp != null) {
                         thisUser.addSubGroup(subGrp);
                     } else {
-                        GroupManager.logger.log(Level.WARNING, "Subgroup ''{0}'' not found for user: {1}. Ignoring entry in file: {2}", new Object[]{nodeData.toString(), thisUser.getLastName(), usersFile.getPath()});
+                        GroupManager.logger.log(Level.WARNING, "Subgroup ''{0}'' not found for user: {1}. Ignoring entry in file: {2}", new String[]{nodeData.toString(), thisUser.getLastName(), usersFile.getPath()});
                     }
                 }
 
@@ -975,7 +975,7 @@ public class WorldDataHolder {
                 if (nodeData != null) {
                     Group hisGroup = ph.getGroup(nodeData.toString());
                     if (hisGroup == null) {
-                        GroupManager.logger.log(Level.WARNING, "There is no group {0}, as stated for player {1}: Set to ''{2}'' for file: {3}", new Object[]{thisUserNode.get("group").toString(), thisUser.getLastName(), ph.getDefaultGroup().getName(), usersFile.getPath()});
+                        GroupManager.logger.log(Level.WARNING, "There is no group {0}, as stated for player {1}: Set to ''{2}'' for file: {3}", new String[]{thisUserNode.get("group").toString(), thisUser.getLastName(), ph.getDefaultGroup().getName(), usersFile.getPath()});
                         hisGroup = ph.getDefaultGroup();
                     }
                     thisUser.setGroup(hisGroup);
