@@ -1,5 +1,5 @@
 name: GroupManager
-version: 2.13-SNAPSHOT
+version: 2.14-SNAPSHOT
 main: org.anjocaido.groupmanager.GroupManager
 website: https://github.com/Sycholic/GroupManagerRevived
 description: Provides on-the-fly system for permissions system created by Nijikokun. But all in memory, and with flat-file saving schedule.
